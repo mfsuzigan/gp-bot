@@ -13,6 +13,8 @@ public class GPBotData {
 	private String password;
 	private String applicationName;
 	private String activityName;
+	private String chromeVersion;
+	private String month;
 	private List<String> skipDays;
 	private List<String> customDays;
 	private Map<String, String> daysWithWorkingHours;
@@ -73,6 +75,22 @@ public class GPBotData {
 		this.customDays = customDays;
 	}
 
+	public String getChromeVersion() {
+		return chromeVersion;
+	}
+
+	public void setChromeVersion(String chromeVersion) {
+		this.chromeVersion = chromeVersion;
+	}
+
+	public String getMonth() {
+		return month;
+	}
+
+	public void setMonth(String month) {
+		this.month = month;
+	}
+
 	public boolean hasEssentialInformation() {
 		return StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)
 				&& StringUtils.isNotBlank(activityName) && StringUtils.isNotBlank(applicationName);
@@ -98,6 +116,12 @@ public class GPBotData {
 			break;
 		case CUSTOM_DAYS:
 			setCustomDays(Arrays.asList(StringUtils.split(parameterValue, ",")));
+			break;
+		case MONTH:
+			setMonth(parameterValue);
+			break;
+		case BROWSER_VERSION:
+			setChromeVersion(parameterValue);
 		}
 	}
 

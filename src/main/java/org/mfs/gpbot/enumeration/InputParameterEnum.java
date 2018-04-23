@@ -1,9 +1,14 @@
 package org.mfs.gpbot.enumeration;
 
 public enum InputParameterEnum {
-	USERNAME("Usuario: ", "--usuario=.*"), PASSWORD("Senha: ", "--senha=.*"), ACTIVITY("Atividade: ", "--atividade=.*"),
-	APPLICATION("Aplicativo: ", "--aplicativo=.*"), SKIP_DAYS("Dias a serem ignorados: ", "--skipdays=.*"),
-	CUSTOM_DAYS("Dias com horas customizadas: ", "--customdays=.*");
+	USERNAME("Usuario: ", "--usuario=.*"), 
+	PASSWORD("Senha: ", "--senha=.*"), 
+	APPLICATION("Nome do aplicativo: ", "--aplicativo=.*"),
+	ACTIVITY("Atividade (Codificação, Implantação, Estudo de projeto etc.): ", "--atividade=.*"),
+	MONTH("Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*"), 
+	SKIP_DAYS("Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*"), 
+	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d[h], d[h], d[h][...])  [opcional]: ", "--customdays=.*"),
+	BROWSER_VERSION("Versao do Chrome/Chromium (61, 62, ... 67) [opcional]: ", "--chromeversion=."); 
 
 	private String inputMessage;
 	private String commandLinePattern;
