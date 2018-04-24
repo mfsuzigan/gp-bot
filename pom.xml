@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.mfs</groupId>
 	<artifactId>gp-bot</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>GP Bot</name>
 	<description>Lançamento automático do GP</description>
 	<build>
@@ -17,45 +17,6 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
-				<configuration>
-					<archive>
-						<manifest>
-							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-							<mainClass>org.mfs.gpbot.GPBotApplication</mainClass>
-							<addClasspath>true</addClasspath>
-							<classpathPrefix>./lib/</classpathPrefix>
-						</manifest>
-						<manifestEntries>
-							<Implementation-Version>${project.version}</Implementation-Version>
-							<Implementation-Build>${buildNumber}</Implementation-Build>
-							<Implementation-Title>${project.artifactId}</Implementation-Title>
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>./target/lib/</outputDirectory>
-							<overWriteReleases>true</overWriteReleases>
-							<overWriteSnapshots>true</overWriteSnapshots>
-							<overWriteIfNewer>true</overWriteIfNewer>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>-->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>

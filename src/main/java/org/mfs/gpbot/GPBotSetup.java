@@ -96,48 +96,48 @@ public class GPBotSetup {
 
 	public static ChromeDriver getDriver(String chromeVersion) {
 		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
-		
+
 		String chromeDrivePath = "lib/chromedriver/{0}/chromedriver";
 		ChromeDriver driver = null;
-		
+
 		if (StringUtils.isNotBlank(chromeVersion)) {
-			
+
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				throw new UnsupportedOperationException("Versao do Chrome/Chromium nao suportada");
 			}
-			
+
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
-			System.setProperty("webdriver.chrome.driver", chromeDrivePath);	
+			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
 			driver = new ChromeDriver();
-			
-		} else {			
+
+		} else {
 			LOGGER.info("Versao do Chrome/Chromium nao informada, identificando versao do ChromeDriver aplicavel...");
-			
+
 			for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
 				chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersion);
-				
+
 				try {
-					System.setProperty("webdriver.chrome.driver", chromeDrivePath);	
+					System.setProperty("webdriver.chrome.driver", chromeDrivePath);
 					driver = new ChromeDriver();
 					break;
-					
+
 				} catch (Exception e) {
 					// driver nao encontrado ainda
 				}
 			}
-			
+
 		}
-				
+
 		if (driver == null) {
 			throw new UnsupportedOperationException("Nenhuma versao do ChromeDriver disponivel pode ser aplicada");
 		}
-		
+
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
 		return driver;
 	}
 
 	private static Map<String, String> getChromeDriverVersionsByChrome() {
-		Map<String,String> chromeDriverVerionsByChrome = new HashMap<>();
+		Map<String, String> chromeDriverVerionsByChrome = new HashMap<>();
 		chromeDriverVerionsByChrome.put("61", "2.34");
 		chromeDriverVerionsByChrome.put("62", "2.34");
 		chromeDriverVerionsByChrome.put("63", "2.34");
@@ -147,7 +147,7 @@ public class GPBotSetup {
 		chromeDriverVerionsByChrome.put("67", "2.38");
 		return chromeDriverVerionsByChrome;
 	}
-	
+
 	private static List<String> getChromeDriverVersionsByPriority() {
 		return Arrays.asList("2.34", "2.37", "2.38");
 	}

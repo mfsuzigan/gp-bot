@@ -28,8 +28,8 @@ public class GPBotEngine {
 
 	public static void execute(GPBotData data, RemoteWebDriver driver) {
 		Map<String, String> daysWithHours = getWorkingDaysWithHours(data.getMonth());
-		daysWithHours = processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
-		daysWithHours = processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
+		processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
+		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
 		logonTQI(driver, data);
 
 		for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
@@ -69,7 +69,7 @@ public class GPBotEngine {
 
 		if (daysList != null) {
 			for (String day : daysList) {
-				workingDaysWithHours = processDay(workingDaysWithHours, day.trim(), dayPattern);
+				processDay(workingDaysWithHours, day.trim(), dayPattern);
 			}
 		}
 
@@ -122,16 +122,16 @@ public class GPBotEngine {
 		WebElement errorIcon = driver.findElement(By.xpath("//img[@src='erro.gif']"));
 		LOGGER.info(
 				"Lançando " + dayWithHours.getValue() + " horas no dia " + formatDateForLogging(dayWithHours.getKey()));
-		boolean daySuccessfullySubmited = false;
+		boolean daySuccessfullySubmitted = false;
 
 		if (errorIcon.isDisplayed()) {
 			LOGGER.info("	Erro! Verifique os dados informados e tente novamente");
 		} else {
-			daySuccessfullySubmited = true;
+			daySuccessfullySubmitted = true;
 			LOGGER.info("	Sucesso!");
 		}
 
-		return daySuccessfullySubmited;
+		return daySuccessfullySubmitted;
 	}
 
 	private static String formatDateForLogging(String day) {
