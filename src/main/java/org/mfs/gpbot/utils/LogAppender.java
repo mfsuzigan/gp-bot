@@ -14,6 +14,6 @@ public class LogAppender extends FileAppender {
 	}
 
 	private static String formatarNomeArquivo(String nomeArquivo) {
-		return MessageFormat.format(nomeArquivo, new SimpleDateFormat("yyyyMMddhh").format(new Date()));
+		return MessageFormat.format(nomeArquivo, new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
 	}
 }

@@ -77,7 +77,6 @@ public class GPBotSetup {
 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 
 		try {
-
 			String parameterInput = null;
 
 			if (InputParameterEnum.PASSWORD.equals(inputParameter)) {
@@ -103,7 +102,7 @@ public class GPBotSetup {
 		if (StringUtils.isNotBlank(chromeVersion)) {
 
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
-				throw new UnsupportedOperationException("Versao do Chrome/Chromium nao suportada");
+				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
 			}
 
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
@@ -111,7 +110,7 @@ public class GPBotSetup {
 			driver = new ChromeDriver();
 
 		} else {
-			LOGGER.info("Versao do Chrome/Chromium nao informada, identificando versao do ChromeDriver aplicavel...");
+			LOGGER.info("Versao do Chrome nao informada, identificando versao do ChromeDriver aplicavel...");
 
 			for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
 				chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersion);

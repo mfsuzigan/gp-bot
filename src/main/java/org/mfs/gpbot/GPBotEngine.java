@@ -1,7 +1,11 @@
 package org.mfs.gpbot;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +36,18 @@ public class GPBotEngine {
 		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
 		logonTQI(driver, data);
 
+		int successfullySubmittedDaysCount = 0;
+		double successfullySubmittedHoursCount = 0.0d;
+
 		for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
-			submitDay(driver, data, dayWithHours);
+			if (submitDay(driver, data, dayWithHours)) {
+				successfullySubmittedDaysCount++;
+				successfullySubmittedHoursCount += Double.valueOf(dayWithHours.getValue());
+			}
 		}
+
+		LOGGER.info("RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de " + daysWithHours.size()
+				+ " dias, totalizando " + successfullySubmittedHoursCount + " horas");
 	}
 
 	private static Map<String, String> getWorkingDaysWithHours(String month) {
@@ -51,17 +64,51 @@ public class GPBotEngine {
 		firstDayOfMonth.set(Calendar.DAY_OF_MONTH, today.getActualMinimum(Calendar.DAY_OF_MONTH));
 
 		Map<String, String> workingDays = new TreeMap<>();
+		List<String> fixedHolidays = getFixedHolidays(today);
 
 		for (Calendar dayInMonth = firstDayOfMonth; dayInMonth.before(today) || dayInMonth.equals(today); dayInMonth
 				.add(Calendar.DAY_OF_MONTH, 1)) {
 
+			String formattedDay = GP_DATE_FORMAT.format(dayInMonth.getTime());
+
 			if (dayInMonth.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY
-					&& dayInMonth.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
-				workingDays.put(GP_DATE_FORMAT.format(dayInMonth.getTime()), DEFAULT_WORK_HOURS_AMOUNT);
+					&& dayInMonth.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY
+					&& !fixedHolidays.contains(formattedDay)) {
+				workingDays.put(formattedDay, DEFAULT_WORK_HOURS_AMOUNT);
 			}
 		}
 
 		return workingDays;
+	}
+
+	private static List<String> getFixedHolidays(Calendar today) {
+		try {
+			List<String> fixedHolidaysWithYearAsPlaceHolder = Files.readAllLines(Paths.get("ext/fixed_holidays.dat"));
+
+			String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
+					+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));
+
+			String currentYear = Integer.toString(today.get(Calendar.YEAR));
+			String previousYear = Integer.toString(today.get(Calendar.YEAR) - 1);
+
+			List<String> fixedHolidays = new ArrayList<>();
+
+			for (String fixedHoliday : fixedHolidaysWithYearAsPlaceHolder) {
+				String normalizedFixedHoliday = fixedHoliday.substring(2, 4) + fixedHoliday.substring(0, 2);
+
+				if (currentDayAndMonth.compareTo(normalizedFixedHoliday) >= 0) {
+					fixedHolidays.add(fixedHoliday + currentYear);
+
+				} else {
+					fixedHolidays.add(fixedHoliday + previousYear);
+				}
+			}
+
+			return fixedHolidays;
+
+		} catch (IOException e) {
+			throw new GPBotException("Erro ao ler arquivos de feriados", e);
+		}
 	}
 
 	private static Map<String, String> processDays(Map<String, String> workingDaysWithHours, List<String> daysList,
@@ -105,11 +152,11 @@ public class GPBotEngine {
 
 	private static boolean submitDay(RemoteWebDriver driver, GPBotData data, Map.Entry<String, String> dayWithHours) {
 		driver.navigate().to("https://helpdesk.tqi.com.br/tqiextranet/helpdesk/atividades.asp?TelaOrigem=menu");
+		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
+		
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "CmbAtividade", data.getActivityName());
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "DesAplicativo", data.getApplicationName());
-		// findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab",
-		// dayWithHours.getValue());
-		findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab", "200");
+		findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab", dayWithHours.getValue());
 
 		WebElement date = driver.findElement(By.name("DtaAtividade"));
 		date.click();
@@ -119,16 +166,17 @@ public class GPBotEngine {
 		WebElement recordButton = driver.findElement(By.name("BtGravar"));
 		recordButton.click();
 
-		WebElement errorIcon = driver.findElement(By.xpath("//img[@src='erro.gif']"));
+		String resultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
+		
 		LOGGER.info(
-				"Lançando " + dayWithHours.getValue() + " horas no dia " + formatDateForLogging(dayWithHours.getKey()));
+				"Lançando " + dayWithHours.getValue() + " horas no dia " + formatDateForLogging(dayWithHours.getKey()) + ":");
 		boolean daySuccessfullySubmitted = false;
 
-		if (errorIcon.isDisplayed()) {
-			LOGGER.info("	Erro! Verifique os dados informados e tente novamente");
+		if (!defaultLogoTableHeight.equals(resultLogoTableHeight)) {
+			LOGGER.info("		erro! Verifique os dados informados e tente novamente");
 		} else {
 			daySuccessfullySubmitted = true;
-			LOGGER.info("	Sucesso!");
+			LOGGER.info("		sucesso!");
 		}
 
 		return daySuccessfullySubmitted;

@@ -8,7 +8,7 @@ public enum InputParameterEnum {
 	MONTH("Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*"), 
 	SKIP_DAYS("Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*"), 
 	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d[h], d[h], d[h][...])  [opcional]: ", "--customdays=.*"),
-	BROWSER_VERSION("Versao do Chrome/Chromium (61, 62, ... 67) [opcional]: ", "--chromeversion=."); 
+	BROWSER_VERSION("Versao do Chrome (61 - 67) [opcional]: ", "--chromeversion=."); 
 
 	private String inputMessage;
 	private String commandLinePattern;
