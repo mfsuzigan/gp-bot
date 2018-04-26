@@ -1,5 +1,6 @@
 # GP Bot
 Cansado de ter que preencher o [TQI-GP](https://helpdesk.tqi.com.br/sso/login.action) **na correria**? 
+
 Deixe o **GP Bot** fazer todo o trabalho chato **automaticamente** e em instantes!
 
 * Faça o lançamento de **todos os dias do mês com 8 horas de trabalho** de uma vez só
@@ -25,7 +26,7 @@ E o melhor: tudo isso em **menos de 2 minutos!** :O
     - **Mês (opcional)**:, o mês (numeral) em que serão feitos os lançamentos. Se não informado, o **GP Bot** **assumirá o mês atual**. Exemplo: _3_ (Março)
     - **Dias a serem ignorados (opcional)**: dias, separados por vírgulas, para os quais o **GP Bot** não efetuará lançamentos. Exemplo: _3, 5, 17_
     - **Dias com horas específicas (opcional)**: dias para os quais o **GP Bot** deverá **lançar horas diferentes de 8**. Separados por vírgulas, a quantidade de horas deverá ser informada entre parênteses. Exemplo: _3(7), 5(7.5), 17(6)_ (sete horas no dia 3, sete horas e meia no dia 5 e seis horas no dia 17)
-    - **Versão do Chrome (opcional)**: o **GP Bot** utiliza o [Selenium](https://www.seleniumhq.org/), que por sua vez faz uso do [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) para controlar automaticamente o navegador e é dependente da **versão do Chrome** executada. Se não informada, o **GP Bot** tentatará utilizar, sequencialmente, três versões do ChromeDriver abrangendo as **versões de 61 a 67 do Chrome**.
+    - **Versão do Chrome (opcional)**: o **GP Bot** utiliza o [Selenium](https://www.seleniumhq.org/), que por sua vez faz uso do [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) para controlar automaticamente o navegador, que é dependente da **versão do Chrome** executada. Se não informada, o **GP Bot** tentatará utilizar, sequencialmente, três versões do ChromeDriver abrangendo as **versões de 61 a 67 do Chrome**.
 4. Acompanhe a execução do **GP Bot** pelo console e confira os lançamentos no **log** localizado no diretório `[seu diretorio]/logs`
 
 ## Parâmetros via linha de comando
@@ -40,4 +41,5 @@ Caso queira, informe via linha de comando os dados acima:
 - `--chromeversion`, para a versão do Chrome;
 
 Exemplo de execução com todos os parâmetros via linha de comando:
+
 `java -jar gp-bot.jar --usuario=jose.silva --senha=foobar123 --aplicativo='Rede Acme Fase 3' --atividade='Codificação' --mes=3 --skipdays='3, 5, 17' --customdays='3[7], 5[7.5], 17[6]' --chromeversion=63`
