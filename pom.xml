@@ -5,7 +5,7 @@
 	<artifactId>gp-bot</artifactId>
 	<version>1.0.0</version>
 	<name>GP Bot</name>
-	<description>Lançamento automático do GP</description>
+	<description>Lançamento automático do TQI-GP</description>
 	<build>
 		<plugins>
 			<plugin>
@@ -37,6 +37,23 @@
 					</archive>
 				</configuration>
 			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<finalName>gp-bot</finalName>
+					<descriptors>
+						<descriptor>src/main/resources/assembly.xml</descriptor>
+					</descriptors>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
@@ -66,6 +83,5 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.7</version>
 		</dependency>
-
 	</dependencies>
 </project>
