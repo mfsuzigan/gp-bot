@@ -103,6 +103,8 @@ public class GPBotSetup {
 
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
+			} else {
+				LOGGER.info("Informada versao " + chromeVersion + " do Chrome");
 			}
 
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
@@ -136,15 +138,15 @@ public class GPBotSetup {
 	}
 
 	private static Map<String, String> getChromeDriverVersionsByChrome() {
-		Map<String, String> chromeDriverVerionsByChrome = new HashMap<>();
-		chromeDriverVerionsByChrome.put("61", "2.34");
-		chromeDriverVerionsByChrome.put("62", "2.34");
-		chromeDriverVerionsByChrome.put("63", "2.34");
-		chromeDriverVerionsByChrome.put("64", "2.37");
-		chromeDriverVerionsByChrome.put("65", "2.37");
-		chromeDriverVerionsByChrome.put("66", "2.37");
-		chromeDriverVerionsByChrome.put("67", "2.38");
-		return chromeDriverVerionsByChrome;
+		Map<String, String> chromeDriverVersionsByChrome = new HashMap<>();
+		chromeDriverVersionsByChrome.put("61", "2.34");
+		chromeDriverVersionsByChrome.put("62", "2.34");
+		chromeDriverVersionsByChrome.put("63", "2.34");
+		chromeDriverVersionsByChrome.put("64", "2.37");
+		chromeDriverVersionsByChrome.put("65", "2.37");
+		chromeDriverVersionsByChrome.put("66", "2.37");
+		chromeDriverVersionsByChrome.put("67", "2.38");
+		return chromeDriverVersionsByChrome;
 	}
 
 	private static List<String> getChromeDriverVersionsByPriority() {

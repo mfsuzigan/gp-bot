@@ -120,7 +120,7 @@ public class GPBotData {
 		case MONTH:
 			setMonth(parameterValue);
 			break;
-		case BROWSER_VERSION:
+		case CHROME_VERSION:
 			setChromeVersion(parameterValue);
 		}
 	}

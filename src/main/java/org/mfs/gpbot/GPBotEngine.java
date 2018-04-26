@@ -20,7 +20,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 public class GPBotEngine {
 	private static final String DEFAULT_WORK_HOURS_AMOUNT = "8";
-	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\[(\\d+|\\d+\\.\\d{1,2})\\]";
+	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
 	private static final String SKIP_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])";
 	private static final SimpleDateFormat GP_DATE_FORMAT = new SimpleDateFormat("ddMMyyyy");
 	private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
@@ -134,8 +134,8 @@ public class GPBotEngine {
 			workingDaysWithHours.remove(formattedDay);
 
 		} else if (CUSTOM_DAY_PATTERN.equals(pattern) && dayToProcess.matches(CUSTOM_DAY_PATTERN)) {
-			String day = dayToProcess.split("\\[")[0];
-			String hours = (dayToProcess.split("\\[")[1]).split("\\]")[0];
+			String day = dayToProcess.split("\\(")[0];
+			String hours = (dayToProcess.split("\\(")[1]).split("\\)")[0];
 
 			Calendar calendar = Calendar.getInstance();
 			calendar.set(Calendar.DAY_OF_MONTH, Integer.valueOf(day));
