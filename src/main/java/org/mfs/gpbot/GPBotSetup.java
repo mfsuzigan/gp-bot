@@ -1,6 +1,7 @@
 package org.mfs.gpbot;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -15,9 +16,17 @@ import org.apache.log4j.Logger;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+/**
+ * Captura dados das entradas, identifica a versao do Chrome e do ChromeVersion
+ * aplicavel
+ * 
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotSetup {
 
 	private static final Logger LOGGER = Logger.getLogger(GPBotSetup.class);
+	private static final String CHROME_VERSION_COMMAND_OUTPUT_PATTERN = "Google Chrome \\d{2}.*";
 
 	private GPBotSetup() {
 
@@ -93,10 +102,11 @@ public class GPBotSetup {
 		}
 	}
 
-	public static ChromeDriver getDriver(String chromeVersion) {
+	public static ChromeDriver getDriver() {
 		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
 
 		String chromeDrivePath = "lib/chromedriver/{0}/chromedriver";
+		String chromeVersion = getChromeVersion();
 		ChromeDriver driver = null;
 
 		if (StringUtils.isNotBlank(chromeVersion)) {
@@ -104,7 +114,7 @@ public class GPBotSetup {
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
 			} else {
-				LOGGER.info("Informada versao " + chromeVersion + " do Chrome");
+				LOGGER.info("Identificada versao " + chromeVersion + " do Chrome");
 			}
 
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
@@ -112,7 +122,7 @@ public class GPBotSetup {
 			driver = new ChromeDriver();
 
 		} else {
-			LOGGER.info("Versao do Chrome nao informada, identificando versao do ChromeDriver aplicavel...");
+			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");
 
 			for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
 				chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersion);
@@ -135,6 +145,25 @@ public class GPBotSetup {
 
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
 		return driver;
+	}
+
+	private static String getChromeVersion() {
+		String chromeVersion = null;
+
+		try {
+			InputStream inputStream = Runtime.getRuntime().exec("google-chrome --version").getInputStream();
+			String versionCommandOutput = new BufferedReader(new InputStreamReader(inputStream)).readLine();
+
+			if (versionCommandOutput.matches(CHROME_VERSION_COMMAND_OUTPUT_PATTERN)) {
+				chromeVersion = versionCommandOutput.split("Google Chrome ")[1].substring(0, 2);
+			}
+
+		} catch (Exception e) {
+			// erro ao detectar versao do Chrome, tentara os drivers disponiveis
+			// sequencialmente
+		}
+
+		return chromeVersion;
 	}
 
 	private static Map<String, String> getChromeDriverVersionsByChrome() {

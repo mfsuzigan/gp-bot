@@ -7,13 +7,19 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
 
+/**
+ * Modela os dados necessarios para o lancamento do GP e configuracoes possiveis
+ * do bot
+ * 
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotData {
 
 	private String username;
 	private String password;
 	private String applicationName;
 	private String activityName;
-	private String chromeVersion;
 	private String month;
 	private List<String> skipDays;
 	private List<String> customDays;
@@ -75,14 +81,6 @@ public class GPBotData {
 		this.customDays = customDays;
 	}
 
-	public String getChromeVersion() {
-		return chromeVersion;
-	}
-
-	public void setChromeVersion(String chromeVersion) {
-		this.chromeVersion = chromeVersion;
-	}
-
 	public String getMonth() {
 		return month;
 	}
@@ -120,8 +118,6 @@ public class GPBotData {
 		case MONTH:
 			setMonth(parameterValue);
 			break;
-		case CHROME_VERSION:
-			setChromeVersion(parameterValue);
 		}
 	}
 

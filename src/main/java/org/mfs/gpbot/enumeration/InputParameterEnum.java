@@ -1,5 +1,11 @@
 package org.mfs.gpbot.enumeration;
 
+/**
+ * Listagem dos parametros de entrada possiveis do bot
+ * 
+ * @author Michel Suzigan
+ *
+ */
 public enum InputParameterEnum {
 	USERNAME("Usuario: ", "--usuario=.*"), 
 	PASSWORD("Senha: ", "--senha=.*"), 
@@ -7,8 +13,7 @@ public enum InputParameterEnum {
 	ACTIVITY("Atividade (Codificação, Implantação, Estudo de projeto etc.): ", "--atividade=.*"),
 	MONTH("Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*"), 
 	SKIP_DAYS("Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*"), 
-	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d(h), d(h), d(h)[...])  [opcional]: ", "--customdays=.*"),
-	CHROME_VERSION("Versao do Chrome (61 - 67) [opcional]: ", "--chromeversion=.*"); 
+	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d(h), d(h), d(h)[...])  [opcional]: ", "--customdays=.*");
 
 	private String inputMessage;
 	private String commandLinePattern;
