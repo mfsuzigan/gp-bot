@@ -16,7 +16,7 @@ E o melhor: tudo isso em **menos de 2 minutos!** :O
 
 ## Executando o GP Bot
 
-1. Faça o download da última versao [aqui](http://docker150675-env-0262004.jelasticlw.com.br:11389/poi-api/v1/swagger-ui.html)
+1. Faça o download da última versao [aqui](release/gp-bot.zip)
 2. Descompacte o arquivo em um diretório, navegue até ele e execute no console: `java -jar gp-bot.jar`
 3. Informe:
     - **Usuário**: seu username TQI. Exemplo: _jose.silva_
