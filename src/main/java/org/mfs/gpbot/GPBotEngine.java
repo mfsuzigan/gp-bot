@@ -18,6 +18,13 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+/**
+ * Interage com o driver para controlar o navegador e efetuar o lancamento do GP
+ * com base nos dados de entrada e configuracao escolhida
+ * 
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotEngine {
 	private static final String DEFAULT_WORK_HOURS_AMOUNT = "8";
 	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
@@ -153,7 +160,7 @@ public class GPBotEngine {
 	private static boolean submitDay(RemoteWebDriver driver, GPBotData data, Map.Entry<String, String> dayWithHours) {
 		driver.navigate().to("https://helpdesk.tqi.com.br/tqiextranet/helpdesk/atividades.asp?TelaOrigem=menu");
 		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
-		
+
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "CmbAtividade", data.getActivityName());
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "DesAplicativo", data.getApplicationName());
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab", dayWithHours.getValue());
@@ -167,9 +174,9 @@ public class GPBotEngine {
 		recordButton.click();
 
 		String resultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
-		
-		LOGGER.info(
-				"Lançando " + dayWithHours.getValue() + " horas no dia " + formatDateForLogging(dayWithHours.getKey()) + ":");
+
+		LOGGER.info("Lançando " + dayWithHours.getValue() + " horas no dia "
+				+ formatDateForLogging(dayWithHours.getKey()) + ":");
 		boolean daySuccessfullySubmitted = false;
 
 		if (!defaultLogoTableHeight.equals(resultLogoTableHeight)) {
