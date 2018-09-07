@@ -1,21 +1,26 @@
 package org.mfs.gpbot.enumeration;
 
+import org.apache.commons.lang3.StringUtils;
+
 public enum InputParameterEnum {
-	USERNAME("Usuario: ", "--usuario=.*"), 
-	PASSWORD("Senha: ", "--senha=.*"), 
-	APPLICATION("Nome do aplicativo: ", "--aplicativo=.*"),
-	ACTIVITY("Atividade (Codificação, Implantação, Estudo de projeto etc.): ", "--atividade=.*"),
-	MONTH("Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*"), 
-	SKIP_DAYS("Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*"), 
-	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d(h), d(h), d(h)[...])  [opcional]: ", "--customdays=.*"),
-	CHROME_VERSION("Versao do Chrome (61 - 67) [opcional]: ", "--chromeversion=.*"); 
+	USERNAME("Usuario: ", "--usuario=.*", null), PASSWORD("Senha: ", "--senha=.*", null),
+	APPLICATION("Nome do aplicativo: ", "--aplicativo=.*", null),
+	ACTIVITY("Atividade (Codificação, Implantação, Estudo de projeto etc.): ", "--atividade=.*", null),
+	ONLY_TODAY("Lançar somente hoje? (S/N) [opcional]: ", "--today", new String[] { "s", "sim" }),
+	MONTH("Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*", null),
+	SKIP_DAYS("Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*", null),
+	CUSTOM_DAYS("Lancar horas especificas nestes dias (formato: d(h), d(h), d(h)[...])  [opcional]: ",
+			"--customdays=.*", null),
+	CHROME_VERSION("Versao do Chrome (61 - 67) [opcional]: ", "--chromeversion=.*", null);
 
 	private String inputMessage;
 	private String commandLinePattern;
+	private String[] expectedValues;
 
-	private InputParameterEnum(String inputMessage, String commandLineAlias) {
+	private InputParameterEnum(String inputMessage, String commandLineAlias, String[] expectedValues) {
 		this.inputMessage = inputMessage;
 		commandLinePattern = commandLineAlias;
+		this.expectedValues = expectedValues;
 	}
 
 	public String getInputMessage() {
@@ -24,5 +29,9 @@ public enum InputParameterEnum {
 
 	public String getCommandLinePattern() {
 		return commandLinePattern;
+	}
+
+	public boolean matchesAnyExpectedValues(String value) {
+		return StringUtils.equalsAnyIgnoreCase(value, expectedValues);
 	}
 }

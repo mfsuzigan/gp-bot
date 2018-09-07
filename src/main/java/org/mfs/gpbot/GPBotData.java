@@ -15,6 +15,7 @@ public class GPBotData {
 	private String activityName;
 	private String chromeVersion;
 	private String month;
+	private boolean todayOnly;
 	private List<String> skipDays;
 	private List<String> customDays;
 	private Map<String, String> daysWithWorkingHours;
@@ -91,6 +92,14 @@ public class GPBotData {
 		this.month = month;
 	}
 
+	public boolean isTodayOnly() {
+		return todayOnly;
+	}
+
+	public void setTodayOnly(String onlyToday) {
+		todayOnly = !(StringUtils.isBlank(onlyToday) || "N".equals(onlyToday));
+	}
+
 	public boolean hasEssentialInformation() {
 		return StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)
 				&& StringUtils.isNotBlank(activityName) && StringUtils.isNotBlank(applicationName);
@@ -122,6 +131,12 @@ public class GPBotData {
 			break;
 		case CHROME_VERSION:
 			setChromeVersion(parameterValue);
+			break;
+		case ONLY_TODAY:
+			setTodayOnly(parameterValue);
+			break;
+		default:
+			break;
 		}
 	}
 

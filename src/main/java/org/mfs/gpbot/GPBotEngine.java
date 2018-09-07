@@ -31,7 +31,7 @@ public class GPBotEngine {
 	}
 
 	public static void execute(GPBotData data, RemoteWebDriver driver) {
-		Map<String, String> daysWithHours = getWorkingDaysWithHours(data.getMonth());
+		Map<String, String> daysWithHours = getWorkingDaysWithHours(data);
 		processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
 		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
 		logonTQI(driver, data);
@@ -50,23 +50,14 @@ public class GPBotEngine {
 				+ " dias, totalizando " + successfullySubmittedHoursCount + " horas");
 	}
 
-	private static Map<String, String> getWorkingDaysWithHours(String month) {
-
-		Calendar today = Calendar.getInstance();
-
-		if (StringUtils.isNotBlank(month) && !Integer.toString(today.get(Calendar.MONTH)).equals(month)) {
-			today.set(Calendar.MONTH, Integer.valueOf(month) - 1);
-			today.set(Calendar.DAY_OF_MONTH, today.getActualMaximum(Calendar.DAY_OF_MONTH));
-		}
-
-		Calendar firstDayOfMonth = Calendar.getInstance();
-		firstDayOfMonth.set(Calendar.MONTH, today.get(Calendar.MONTH));
-		firstDayOfMonth.set(Calendar.DAY_OF_MONTH, today.getActualMinimum(Calendar.DAY_OF_MONTH));
+	private static Map<String, String> getWorkingDaysWithHours(GPBotData data) {
+		Calendar finalDay = getFinalDay(data);
+		Calendar firstDay = data.isTodayOnly() ? finalDay : getFirstDay(finalDay);
 
 		Map<String, String> workingDays = new TreeMap<>();
-		List<String> fixedHolidays = getFixedHolidays(today);
+		List<String> fixedHolidays = getFixedHolidays(finalDay);
 
-		for (Calendar dayInMonth = firstDayOfMonth; dayInMonth.before(today) || dayInMonth.equals(today); dayInMonth
+		for (Calendar dayInMonth = firstDay; dayInMonth.before(finalDay) || dayInMonth.equals(finalDay); dayInMonth
 				.add(Calendar.DAY_OF_MONTH, 1)) {
 
 			String formattedDay = GP_DATE_FORMAT.format(dayInMonth.getTime());
@@ -79,6 +70,26 @@ public class GPBotEngine {
 		}
 
 		return workingDays;
+	}
+
+	private static Calendar getFirstDay(Calendar initialDay) {
+		Calendar firstDayOfMonth = Calendar.getInstance();
+		firstDayOfMonth.set(Calendar.MONTH, initialDay.get(Calendar.MONTH));
+		firstDayOfMonth.set(Calendar.DAY_OF_MONTH, initialDay.getActualMinimum(Calendar.DAY_OF_MONTH));
+
+		return firstDayOfMonth;
+	}
+
+	private static Calendar getFinalDay(GPBotData data) {
+		Calendar today = Calendar.getInstance();
+
+		if (!data.isTodayOnly() && StringUtils.isNotBlank(data.getMonth())
+				&& !Integer.toString(today.get(Calendar.MONTH)).equals(data.getMonth())) {
+			today.set(Calendar.MONTH, Integer.valueOf(data.getMonth()) - 1);
+			today.set(Calendar.DAY_OF_MONTH, today.getActualMaximum(Calendar.DAY_OF_MONTH));
+		}
+
+		return today;
 	}
 
 	private static List<String> getFixedHolidays(Calendar today) {
@@ -153,7 +164,7 @@ public class GPBotEngine {
 	private static boolean submitDay(RemoteWebDriver driver, GPBotData data, Map.Entry<String, String> dayWithHours) {
 		driver.navigate().to("https://helpdesk.tqi.com.br/tqiextranet/helpdesk/atividades.asp?TelaOrigem=menu");
 		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
-		
+
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "CmbAtividade", data.getActivityName());
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "DesAplicativo", data.getApplicationName());
 		findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab", dayWithHours.getValue());
@@ -167,9 +178,9 @@ public class GPBotEngine {
 		recordButton.click();
 
 		String resultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
-		
-		LOGGER.info(
-				"Lançando " + dayWithHours.getValue() + " horas no dia " + formatDateForLogging(dayWithHours.getKey()) + ":");
+
+		LOGGER.info("Lançando " + dayWithHours.getValue() + " horas no dia "
+				+ formatDateForLogging(dayWithHours.getKey()) + ":");
 		boolean daySuccessfullySubmitted = false;
 
 		if (!defaultLogoTableHeight.equals(resultLogoTableHeight)) {

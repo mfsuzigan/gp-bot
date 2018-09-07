@@ -49,12 +49,24 @@ public class GPBotSetup {
 		GPBotData data = new GPBotData();
 
 		Stream.of(InputParameterEnum.values()).forEach(inputParameter -> {
+
 			String argParameter = Stream.of(args).filter(arg -> arg.matches(inputParameter.getCommandLinePattern()))
 					.findAny().orElse(null);
 
 			if (StringUtils.isNotBlank(argParameter)) {
-				String parameterValue = argParameter.split("=")[1];
-				data.set(inputParameter, parameterValue.trim());
+				String[] parameterParts = argParameter.split("=");
+				String parameterValue = StringUtils.EMPTY;
+
+				if (parameterParts.length > 1) {
+					parameterValue = parameterParts[1].trim();
+				}
+
+				if (InputParameterEnum.ONLY_TODAY.equals(inputParameter)) {
+					parameterValue = (StringUtils.isBlank(parameterValue)
+							|| InputParameterEnum.ONLY_TODAY.matchesAnyExpectedValues(parameterValue)) ? "S" : "N";
+				}
+
+				data.set(inputParameter, parameterValue);
 			}
 		});
 
@@ -84,6 +96,10 @@ public class GPBotSetup {
 
 			} else {
 				parameterInput = bufferedReader.readLine();
+			}
+
+			if (InputParameterEnum.ONLY_TODAY.equals(inputParameter)) {
+				parameterInput = InputParameterEnum.ONLY_TODAY.matchesAnyExpectedValues(parameterInput) ? "S" : "N";
 			}
 
 			return parameterInput;
