@@ -8,3 +8,4 @@ target
 .idea
 *.factorypath
 logs
+release

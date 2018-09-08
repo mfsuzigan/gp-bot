@@ -1,21 +1,28 @@
 package org.mfs.gpbot;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
 
+/**
+ * Modela os dados necessarios para o lancamento do GP e configuracoes possiveis
+ * do bot
+ *
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotData {
 
 	private String username;
 	private String password;
 	private String applicationName;
 	private String activityName;
-	private String chromeVersion;
 	private String month;
-	private boolean todayOnly;
+	private Boolean todayOnly;
 	private List<String> skipDays;
 	private List<String> customDays;
 	private Map<String, String> daysWithWorkingHours;
@@ -76,14 +83,6 @@ public class GPBotData {
 		this.customDays = customDays;
 	}
 
-	public String getChromeVersion() {
-		return chromeVersion;
-	}
-
-	public void setChromeVersion(String chromeVersion) {
-		this.chromeVersion = chromeVersion;
-	}
-
 	public String getMonth() {
 		return month;
 	}
@@ -92,7 +91,7 @@ public class GPBotData {
 		this.month = month;
 	}
 
-	public boolean isTodayOnly() {
+	public Boolean isTodayOnly() {
 		return todayOnly;
 	}
 
@@ -103,6 +102,48 @@ public class GPBotData {
 	public boolean hasEssentialInformation() {
 		return StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)
 				&& StringUtils.isNotBlank(activityName) && StringUtils.isNotBlank(applicationName);
+	}
+
+	@SuppressWarnings("rawtypes")
+	public boolean isSet(InputParameterEnum inputParameter) {
+
+		Object parameterSetValue = null;
+
+		switch (inputParameter) {
+		case USERNAME:
+			parameterSetValue = getUsername();
+			break;
+		case PASSWORD:
+			parameterSetValue = getPassword();
+			break;
+		case APPLICATION:
+			parameterSetValue = getApplicationName();
+			break;
+		case ACTIVITY:
+			parameterSetValue = getActivityName();
+			break;
+		case SKIP_DAYS:
+			parameterSetValue = getSkipDays();
+			break;
+		case CUSTOM_DAYS:
+			parameterSetValue = getCustomDays();
+			break;
+		case MONTH:
+			parameterSetValue = getMonth();
+			break;
+		case ONLY_TODAY:
+			parameterSetValue = isTodayOnly();
+			break;
+		default:
+			break;
+		}
+
+		boolean stringIsSet = parameterSetValue instanceof String && StringUtils.isNotBlank((String) parameterSetValue);
+		boolean collectionIsSet = parameterSetValue instanceof Collection && ((Collection) parameterSetValue) != null
+				&& !((Collection) parameterSetValue).isEmpty();
+		boolean booleanIsSet = parameterSetValue instanceof Boolean && parameterSetValue != null;
+
+		return stringIsSet || collectionIsSet || booleanIsSet;
 	}
 
 	public void set(InputParameterEnum inputParameter, String parameterValue) {
@@ -128,9 +169,6 @@ public class GPBotData {
 			break;
 		case MONTH:
 			setMonth(parameterValue);
-			break;
-		case CHROME_VERSION:
-			setChromeVersion(parameterValue);
 			break;
 		case ONLY_TODAY:
 			setTodayOnly(parameterValue);
