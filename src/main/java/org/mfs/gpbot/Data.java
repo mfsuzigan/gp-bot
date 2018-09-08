@@ -15,7 +15,7 @@ import org.mfs.gpbot.enumeration.InputParameterEnum;
  * @author Michel Suzigan
  *
  */
-public class GPBotData {
+public class Data {
 
 	private String username;
 	private String password;

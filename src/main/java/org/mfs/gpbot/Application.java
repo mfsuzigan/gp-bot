@@ -13,16 +13,16 @@ import org.apache.log4j.Logger;
  * @author Michel Suzigan
  *
  */
-public class GPBotApplication {
+public class Application {
 
-	private static final Logger LOGGER = Logger.getLogger(GPBotApplication.class);
+	private static final Logger LOGGER = Logger.getLogger(Application.class);
 
 	public static void main(String[] args) {
 		LOGGER.info("Iniciando lancamento automatizado de horas no TQI-GP");
 
 		try {
-			GPBotData data = GPBotSetup.getData(args);
-			GPBotEngine.execute(data);
+			Data data = Setup.getData(args);
+			Engine.execute(data);
 
 		} catch (Exception e) {
 			LOGGER.error("Erro ao lancar horas no TQI-GP", e);
@@ -34,7 +34,7 @@ public class GPBotApplication {
 	public static String getPath() {
 		try {
 			Path path = Paths.get(
-					new URI(GPBotApplication.class.getProtectionDomain().getCodeSource().getLocation().toString()));
+					new URI(Application.class.getProtectionDomain().getCodeSource().getLocation().toString()));
 
 			if (path.toFile().isFile() && path.getParent().toFile().isDirectory()) {
 				return path.getParent().toString();

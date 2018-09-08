@@ -1,8 +1,5 @@
 package org.mfs.gpbot;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,19 +22,21 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  * @author Michel Suzigan
  *
  */
-public class GPBotEngine {
+public class Engine {
 	private static final String DEFAULT_WORK_HOURS_AMOUNT = "8";
 	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
 	private static final String SKIP_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])";
+	private static final String WEEKEND_DAYS_MESSAGE = "Os seguintes dias correspondem a fins de semana e nao serao lancados:";
+	private static final String HOLIDAYS_MESSAGE = "Os seguintes dias correspondem a feriados configurados e nao serao lancados:";
 	private static final SimpleDateFormat GP_DATE_FORMAT = new SimpleDateFormat("ddMMyyyy");
 	private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
-	private static final Logger LOGGER = Logger.getLogger(GPBotSetup.class);
+	private static final Logger LOGGER = Logger.getLogger(Setup.class);
 
 	enum ElementFilterType {
 		ID, NAME
 	}
 
-	public static void execute(GPBotData data) {
+	public static void execute(Data data) {
 		Map<String, String> daysWithHours = getWorkingDaysWithHours(data);
 		processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
 		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
@@ -46,7 +45,7 @@ public class GPBotEngine {
 		double successfullySubmittedHoursCount = 0.0d;
 
 		if (!daysWithHours.isEmpty()) {
-			RemoteWebDriver driver = GPBotSetup.getDriver();
+			RemoteWebDriver driver = Setup.getDriver();
 			logonTQI(driver, data);
 
 			for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
@@ -63,48 +62,50 @@ public class GPBotEngine {
 				+ " dias, totalizando " + successfullySubmittedHoursCount + " horas");
 	}
 
-	private static Map<String, String> getWorkingDaysWithHours(GPBotData data) {
+	private static Map<String, String> getWorkingDaysWithHours(Data data) {
 		Calendar finalDay = getFinalDay(data);
 		Calendar firstDay = data.isTodayOnly() ? (Calendar) finalDay.clone() : getFirstDay(finalDay);
 
 		Map<String, String> workingDays = new TreeMap<>();
 		List<String> fixedHolidays = getFixedHolidays(finalDay);
 
+		List<String> formattedWeekendDays = new ArrayList<>();
+		List<String> formattedHolidays = new ArrayList<>();
+
 		for (Calendar dayInMonth = firstDay; dayInMonth.before(finalDay) || dayInMonth.equals(finalDay); dayInMonth
 				.add(Calendar.DAY_OF_MONTH, 1)) {
 
-			if (!matchesWeekendDay(dayInMonth) && !matchesHoliday(dayInMonth, fixedHolidays)) {
+			if (matchesWeekendDay(dayInMonth)) {
+				formattedWeekendDays.add(DEFAULT_DATE_FORMAT.format(dayInMonth.getTime()));
+
+			} else if (matchesHoliday(dayInMonth, fixedHolidays)) {
+				formattedHolidays.add(DEFAULT_DATE_FORMAT.format(dayInMonth.getTime()));
+
+			} else {
 				workingDays.put(GP_DATE_FORMAT.format(dayInMonth.getTime()), DEFAULT_WORK_HOURS_AMOUNT);
 			}
 		}
 
+		showSpecialDaysMessage(formattedWeekendDays, WEEKEND_DAYS_MESSAGE);
+		showSpecialDaysMessage(formattedHolidays, HOLIDAYS_MESSAGE);
+
 		return workingDays;
 	}
 
-	private static boolean matchesWeekendDay(Calendar dayInMonth) {
-		boolean matchesWeekendDay = false;
-
-		if (dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY
-				|| dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-			LOGGER.info("O dia " + DEFAULT_DATE_FORMAT.format(dayInMonth.getTime())
-					+ " corresponde a um dia de fim-de-semana e nao sera lancado");
-			matchesWeekendDay = true;
+	private static void showSpecialDaysMessage(List<String> formattedSpecialDays, String message) {
+		if (!formattedSpecialDays.isEmpty()) {
+			LOGGER.info(message);
+			formattedSpecialDays.forEach(day -> LOGGER.info("   > " + day));
 		}
+	}
 
-		return matchesWeekendDay;
+	private static boolean matchesWeekendDay(Calendar dayInMonth) {
+		return dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY
+				|| dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY;
 	}
 
 	private static boolean matchesHoliday(Calendar dayInMonth, List<String> fixedHolidays) {
-		String formattedDay = GP_DATE_FORMAT.format(dayInMonth.getTime());
-		boolean matchesHoliday = false;
-
-		if (fixedHolidays.contains(formattedDay)) {
-			LOGGER.info("O dia " + DEFAULT_DATE_FORMAT.format(dayInMonth.getTime())
-					+ " corresponde a um feriado configurado e nao sera lancado");
-			matchesHoliday = true;
-		}
-
-		return matchesHoliday;
+		return fixedHolidays.contains(GP_DATE_FORMAT.format(dayInMonth.getTime()));
 	}
 
 	private static Calendar getFirstDay(Calendar initialDay) {
@@ -115,48 +116,43 @@ public class GPBotEngine {
 		return firstDayOfMonth;
 	}
 
-	private static Calendar getFinalDay(GPBotData data) {
-		Calendar today = Calendar.getInstance();
+	private static Calendar getFinalDay(Data data) {
+		Calendar finalDay = Calendar.getInstance();
 
 		if (!data.isTodayOnly() && StringUtils.isNotBlank(data.getMonth())
-				&& !Integer.toString(today.get(Calendar.MONTH)).equals(data.getMonth())) {
-			today.set(Calendar.MONTH, Integer.valueOf(data.getMonth()) - 1);
-			today.set(Calendar.DAY_OF_MONTH, today.getActualMaximum(Calendar.DAY_OF_MONTH));
+				&& !Integer.toString(finalDay.get(Calendar.MONTH)).equals(data.getMonth())) {
+			finalDay.set(Calendar.MONTH, Integer.valueOf(data.getMonth()) - 1);
+			finalDay.set(Calendar.DAY_OF_MONTH, finalDay.getActualMaximum(Calendar.DAY_OF_MONTH));
 		}
 
-		return today;
+		return finalDay;
 	}
 
 	private static List<String> getFixedHolidays(Calendar today) {
-		try {
-			String holidaysFilePath = GPBotApplication.getPath() + "/ext/fixed_holidays.dat";
-			LOGGER.info("Lendo arquivo de feriados: " + holidaysFilePath);
-			List<String> fixedHolidaysWithYearAsPlaceHolder = Files.readAllLines(Paths.get(holidaysFilePath));
+		String holidaysFilePath = Application.getPath() + "/ext/fixed_holidays.dat";
+		LOGGER.info("Lendo arquivo de feriados: " + holidaysFilePath);
+		List<String> fixedHolidaysWithYearAsPlaceHolder = Utils.readAllLinesFromFile(holidaysFilePath);
 
-			String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
-					+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));
+		String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
+				+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));
 
-			String currentYear = Integer.toString(today.get(Calendar.YEAR));
-			String previousYear = Integer.toString(today.get(Calendar.YEAR) - 1);
+		String currentYear = Integer.toString(today.get(Calendar.YEAR));
+		String previousYear = Integer.toString(today.get(Calendar.YEAR) - 1);
 
-			List<String> fixedHolidays = new ArrayList<>();
+		List<String> fixedHolidays = new ArrayList<>();
 
-			for (String fixedHoliday : fixedHolidaysWithYearAsPlaceHolder) {
-				String normalizedFixedHoliday = fixedHoliday.substring(2, 4) + fixedHoliday.substring(0, 2);
+		for (String fixedHoliday : fixedHolidaysWithYearAsPlaceHolder) {
+			String normalizedFixedHoliday = fixedHoliday.substring(2, 4) + fixedHoliday.substring(0, 2);
 
-				if (currentDayAndMonth.compareTo(normalizedFixedHoliday) >= 0) {
-					fixedHolidays.add(fixedHoliday + currentYear);
+			if (currentDayAndMonth.compareTo(normalizedFixedHoliday) >= 0) {
+				fixedHolidays.add(fixedHoliday + currentYear);
 
-				} else {
-					fixedHolidays.add(fixedHoliday + previousYear);
-				}
+			} else {
+				fixedHolidays.add(fixedHoliday + previousYear);
 			}
-
-			return fixedHolidays;
-
-		} catch (IOException e) {
-			throw new GPBotException("Erro ao ler arquivo de feriados", e);
 		}
+
+		return fixedHolidays;
 	}
 
 	private static Map<String, String> processDays(Map<String, String> workingDaysWithHours, List<String> daysList,
@@ -198,7 +194,7 @@ public class GPBotEngine {
 		return workingDaysWithHours;
 	}
 
-	private static boolean submitDay(RemoteWebDriver driver, GPBotData data, Map.Entry<String, String> dayWithHours) {
+	private static boolean submitDay(RemoteWebDriver driver, Data data, Map.Entry<String, String> dayWithHours) {
 		driver.navigate().to("https://helpdesk.tqi.com.br/tqiextranet/helpdesk/atividades.asp?TelaOrigem=menu");
 		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
 
@@ -240,7 +236,7 @@ public class GPBotEngine {
 		}
 	}
 
-	private static void logonTQI(RemoteWebDriver driver, GPBotData data) {
+	private static void logonTQI(RemoteWebDriver driver, Data data) {
 		driver.get("https://helpdesk.tqi.com.br/sso/login.action");
 
 		findElementAndSendKeys(driver, ElementFilterType.ID, "userName", data.getUsername());
