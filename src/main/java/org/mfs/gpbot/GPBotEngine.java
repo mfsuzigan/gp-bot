@@ -18,6 +18,13 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+/**
+ * Interage com o driver para controlar o navegador e efetuar o lancamento do GP
+ * com base nos dados de entrada e configuracao escolhida
+ *
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotEngine {
 	private static final String DEFAULT_WORK_HOURS_AMOUNT = "8";
 	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
@@ -30,20 +37,26 @@ public class GPBotEngine {
 		ID, NAME
 	}
 
-	public static void execute(GPBotData data, RemoteWebDriver driver) {
+	public static void execute(GPBotData data) {
 		Map<String, String> daysWithHours = getWorkingDaysWithHours(data);
 		processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
 		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
-		logonTQI(driver, data);
 
 		int successfullySubmittedDaysCount = 0;
 		double successfullySubmittedHoursCount = 0.0d;
 
-		for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
-			if (submitDay(driver, data, dayWithHours)) {
-				successfullySubmittedDaysCount++;
-				successfullySubmittedHoursCount += Double.valueOf(dayWithHours.getValue());
+		if (!daysWithHours.isEmpty()) {
+			RemoteWebDriver driver = GPBotSetup.getDriver();
+			logonTQI(driver, data);
+
+			for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
+				if (submitDay(driver, data, dayWithHours)) {
+					successfullySubmittedDaysCount++;
+					successfullySubmittedHoursCount += Double.valueOf(dayWithHours.getValue());
+				}
 			}
+
+			driver.close();
 		}
 
 		LOGGER.info("RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de " + daysWithHours.size()
@@ -52,7 +65,7 @@ public class GPBotEngine {
 
 	private static Map<String, String> getWorkingDaysWithHours(GPBotData data) {
 		Calendar finalDay = getFinalDay(data);
-		Calendar firstDay = data.isTodayOnly() ? finalDay : getFirstDay(finalDay);
+		Calendar firstDay = data.isTodayOnly() ? (Calendar) finalDay.clone() : getFirstDay(finalDay);
 
 		Map<String, String> workingDays = new TreeMap<>();
 		List<String> fixedHolidays = getFixedHolidays(finalDay);
@@ -60,16 +73,38 @@ public class GPBotEngine {
 		for (Calendar dayInMonth = firstDay; dayInMonth.before(finalDay) || dayInMonth.equals(finalDay); dayInMonth
 				.add(Calendar.DAY_OF_MONTH, 1)) {
 
-			String formattedDay = GP_DATE_FORMAT.format(dayInMonth.getTime());
-
-			if (dayInMonth.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY
-					&& dayInMonth.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY
-					&& !fixedHolidays.contains(formattedDay)) {
-				workingDays.put(formattedDay, DEFAULT_WORK_HOURS_AMOUNT);
+			if (!matchesWeekendDay(dayInMonth) && !matchesHoliday(dayInMonth, fixedHolidays)) {
+				workingDays.put(GP_DATE_FORMAT.format(dayInMonth.getTime()), DEFAULT_WORK_HOURS_AMOUNT);
 			}
 		}
 
 		return workingDays;
+	}
+
+	private static boolean matchesWeekendDay(Calendar dayInMonth) {
+		boolean matchesWeekendDay = false;
+
+		if (dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY
+				|| dayInMonth.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+			LOGGER.info("O dia " + DEFAULT_DATE_FORMAT.format(dayInMonth.getTime())
+					+ " corresponde a um dia de fim-de-semana e nao sera lancado");
+			matchesWeekendDay = true;
+		}
+
+		return matchesWeekendDay;
+	}
+
+	private static boolean matchesHoliday(Calendar dayInMonth, List<String> fixedHolidays) {
+		String formattedDay = GP_DATE_FORMAT.format(dayInMonth.getTime());
+		boolean matchesHoliday = false;
+
+		if (fixedHolidays.contains(formattedDay)) {
+			LOGGER.info("O dia " + DEFAULT_DATE_FORMAT.format(dayInMonth.getTime())
+					+ " corresponde a um feriado configurado e nao sera lancado");
+			matchesHoliday = true;
+		}
+
+		return matchesHoliday;
 	}
 
 	private static Calendar getFirstDay(Calendar initialDay) {
@@ -94,7 +129,9 @@ public class GPBotEngine {
 
 	private static List<String> getFixedHolidays(Calendar today) {
 		try {
-			List<String> fixedHolidaysWithYearAsPlaceHolder = Files.readAllLines(Paths.get("ext/fixed_holidays.dat"));
+			String holidaysFilePath = GPBotApplication.getPath() + "/ext/fixed_holidays.dat";
+			LOGGER.info("Lendo arquivo de feriados: " + holidaysFilePath);
+			List<String> fixedHolidaysWithYearAsPlaceHolder = Files.readAllLines(Paths.get(holidaysFilePath));
 
 			String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
 					+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));
@@ -118,7 +155,7 @@ public class GPBotEngine {
 			return fixedHolidays;
 
 		} catch (IOException e) {
-			throw new GPBotException("Erro ao ler arquivos de feriados", e);
+			throw new GPBotException("Erro ao ler arquivo de feriados", e);
 		}
 	}
 

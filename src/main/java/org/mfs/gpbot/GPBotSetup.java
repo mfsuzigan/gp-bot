@@ -1,6 +1,7 @@
 package org.mfs.gpbot;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -15,9 +16,17 @@ import org.apache.log4j.Logger;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
 import org.openqa.selenium.chrome.ChromeDriver;
 
+/**
+ * Captura dados das entradas, identifica a versao do Chrome e do ChromeVersion
+ * aplicavel
+ *
+ * @author Michel Suzigan
+ *
+ */
 public class GPBotSetup {
 
 	private static final Logger LOGGER = Logger.getLogger(GPBotSetup.class);
+	private static final String CHROME_VERSION_COMMAND_OUTPUT_PATTERN = "Google Chrome \\d{2}.*";
 
 	private GPBotSetup() {
 
@@ -30,7 +39,7 @@ public class GPBotSetup {
 			data = getDataFromArgs(args);
 
 			if (!data.hasEssentialInformation()) {
-				data = getDataFromDialog();
+				data = getDataFromDialog(data);
 			}
 
 		} catch (Exception e) {
@@ -73,46 +82,69 @@ public class GPBotSetup {
 		return data;
 	}
 
-	private static GPBotData getDataFromDialog() {
-		GPBotData data = new GPBotData();
+	private static GPBotData getDataFromDialog(GPBotData data) {
 
-		Stream.of(InputParameterEnum.values()).forEach(inputParameter -> {
-			String parameterValue = requestInput(inputParameter);
-			data.set(inputParameter, parameterValue.trim());
-		});
+		if (data == null) {
+			data = new GPBotData();
+		}
+
+		for (InputParameterEnum inputParameter : InputParameterEnum.values()) {
+
+			if (!data.isSet(inputParameter)) {
+				String parameterValue = requestInput(inputParameter, data);
+				data.set(inputParameter, parameterValue.trim());
+			}
+		}
 
 		return data;
+
 	}
 
-	private static String requestInput(InputParameterEnum inputParameter) {
-		System.out.print(inputParameter.getInputMessage());
-		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+	private static String requestInput(InputParameterEnum inputParameter, GPBotData data) {
+		String parameterInput = StringUtils.EMPTY;
 
-		try {
-			String parameterInput = null;
+		if (shouldRequestInput(inputParameter, data)) {
+			System.out.print(inputParameter.getInputMessage());
 
-			if (InputParameterEnum.PASSWORD.equals(inputParameter)) {
-				parameterInput = new String(System.console().readPassword());
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 
-			} else {
-				parameterInput = bufferedReader.readLine();
+			try {
+
+				if (InputParameterEnum.PASSWORD.equals(inputParameter)) {
+					parameterInput = new String(System.console().readPassword());
+
+				} else {
+					parameterInput = bufferedReader.readLine();
+				}
+
+				if (InputParameterEnum.ONLY_TODAY.equals(inputParameter)) {
+					parameterInput = InputParameterEnum.ONLY_TODAY.matchesAnyExpectedValues(parameterInput) ? "S" : "N";
+				}
+
+				return parameterInput;
+
+			} catch (Exception e) {
+				throw new IllegalArgumentException("Erro ao ler parametro de entrada", e);
 			}
-
-			if (InputParameterEnum.ONLY_TODAY.equals(inputParameter)) {
-				parameterInput = InputParameterEnum.ONLY_TODAY.matchesAnyExpectedValues(parameterInput) ? "S" : "N";
-			}
-
-			return parameterInput;
-
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Erro ao ler parametro de entrada", e);
 		}
+
+		return parameterInput;
 	}
 
-	public static ChromeDriver getDriver(String chromeVersion) {
+	private static boolean shouldRequestInput(InputParameterEnum inputParameter, GPBotData data) {
+		boolean parameterIsNowUseless = (Boolean.TRUE.equals(data.isTodayOnly())
+				&& (InputParameterEnum.MONTH.equals(inputParameter)
+						|| InputParameterEnum.CUSTOM_DAYS.equals(inputParameter)
+						|| InputParameterEnum.SKIP_DAYS.equals(inputParameter)));
+
+		return !parameterIsNowUseless;
+	}
+
+	public static ChromeDriver getDriver() {
 		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
 
-		String chromeDrivePath = "lib/chromedriver/{0}/chromedriver";
+		String chromeDrivePath = GPBotApplication.getPath() + "/lib/chromedriver/{0}/chromedriver";
+		String chromeVersion = getChromeVersion();
 		ChromeDriver driver = null;
 
 		if (StringUtils.isNotBlank(chromeVersion)) {
@@ -120,15 +152,16 @@ public class GPBotSetup {
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
 			} else {
-				LOGGER.info("Informada versao " + chromeVersion + " do Chrome");
+				LOGGER.info("Identificada versao " + chromeVersion + " do Chrome");
 			}
 
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
 			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
+
 			driver = new ChromeDriver();
 
 		} else {
-			LOGGER.info("Versao do Chrome nao informada, identificando versao do ChromeDriver aplicavel...");
+			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");
 
 			for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
 				chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersion);
@@ -151,6 +184,25 @@ public class GPBotSetup {
 
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
 		return driver;
+	}
+
+	private static String getChromeVersion() {
+		String chromeVersion = null;
+
+		try {
+			InputStream inputStream = Runtime.getRuntime().exec("google-chrome --version").getInputStream();
+			String versionCommandOutput = new BufferedReader(new InputStreamReader(inputStream)).readLine();
+
+			if (versionCommandOutput.matches(CHROME_VERSION_COMMAND_OUTPUT_PATTERN)) {
+				chromeVersion = versionCommandOutput.split("Google Chrome ")[1].substring(0, 2);
+			}
+
+		} catch (Exception e) {
+			// erro ao detectar versao do Chrome, tentara os drivers disponiveis
+			// sequencialmente
+		}
+
+		return chromeVersion;
 	}
 
 	private static Map<String, String> getChromeDriverVersionsByChrome() {
