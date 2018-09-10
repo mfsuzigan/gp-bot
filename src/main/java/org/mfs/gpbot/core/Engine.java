@@ -1,4 +1,4 @@
-package org.mfs.gpbot;
+package org.mfs.gpbot.core;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -11,6 +11,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.mfs.gpbot.Application;
+import org.mfs.gpbot.utils.FilesUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -30,7 +32,7 @@ public class Engine {
 	private static final String HOLIDAYS_MESSAGE = "Os seguintes dias correspondem a feriados configurados e nao serao lancados:";
 	private static final SimpleDateFormat GP_DATE_FORMAT = new SimpleDateFormat("ddMMyyyy");
 	private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
-	private static final Logger LOGGER = Logger.getLogger(Setup.class);
+	private static final Logger LOGGER = Logger.getLogger(Engine.class);
 
 	enum ElementFilterType {
 		ID, NAME
@@ -45,7 +47,7 @@ public class Engine {
 		double successfullySubmittedHoursCount = 0.0d;
 
 		if (!daysWithHours.isEmpty()) {
-			RemoteWebDriver driver = Setup.getDriver();
+			RemoteWebDriver driver = ChromeDriverLoader.getDriver();
 			logonTQI(driver, data);
 
 			for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
@@ -64,7 +66,8 @@ public class Engine {
 
 	private static Map<String, String> getWorkingDaysWithHours(Data data) {
 		Calendar finalDay = getFinalDay(data);
-		Calendar firstDay = data.isTodayOnly() ? (Calendar) finalDay.clone() : getFirstDay(finalDay);
+		Calendar firstDay = Boolean.TRUE.equals(data.isTodayOnly()) ? (Calendar) finalDay.clone()
+				: getFirstDay(finalDay);
 
 		Map<String, String> workingDays = new TreeMap<>();
 		List<String> fixedHolidays = getFixedHolidays(finalDay);
@@ -119,7 +122,7 @@ public class Engine {
 	private static Calendar getFinalDay(Data data) {
 		Calendar finalDay = Calendar.getInstance();
 
-		if (!data.isTodayOnly() && StringUtils.isNotBlank(data.getMonth())
+		if (!Boolean.TRUE.equals(data.isTodayOnly()) && StringUtils.isNotBlank(data.getMonth())
 				&& !Integer.toString(finalDay.get(Calendar.MONTH)).equals(data.getMonth())) {
 			finalDay.set(Calendar.MONTH, Integer.valueOf(data.getMonth()) - 1);
 			finalDay.set(Calendar.DAY_OF_MONTH, finalDay.getActualMaximum(Calendar.DAY_OF_MONTH));
@@ -131,7 +134,7 @@ public class Engine {
 	private static List<String> getFixedHolidays(Calendar today) {
 		String holidaysFilePath = Application.getPath() + "/ext/fixed_holidays.dat";
 		LOGGER.info("Lendo arquivo de feriados: " + holidaysFilePath);
-		List<String> fixedHolidaysWithYearAsPlaceHolder = Utils.readAllLinesFromFile(holidaysFilePath);
+		List<String> fixedHolidaysWithYearAsPlaceHolder = FilesUtils.readAllLinesFromFile(holidaysFilePath);
 
 		String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
 				+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));
@@ -217,10 +220,11 @@ public class Engine {
 		boolean daySuccessfullySubmitted = false;
 
 		if (!defaultLogoTableHeight.equals(resultLogoTableHeight)) {
-			LOGGER.info("		erro! Verifique os dados informados e tente novamente");
+			String message = driver.findElementByXPath("//table/tbody/tr/td[2]/p/font").getText();
+			LOGGER.info("	erro! Mensagem: \"" + message + "\"");
 		} else {
 			daySuccessfullySubmitted = true;
-			LOGGER.info("		sucesso!");
+			LOGGER.info("	sucesso!");
 		}
 
 		return daySuccessfullySubmitted;

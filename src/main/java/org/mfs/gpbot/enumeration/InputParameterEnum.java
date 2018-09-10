@@ -12,7 +12,7 @@ public enum InputParameterEnum {
 	USERNAME("	Usuarios: ", "--usuario=.*", null), PASSWORD("	Senha: ", "--senha=.*", null),
 	APPLICATION("	Nome do aplicativo: ", "--aplicativo=.*", null),
 	ACTIVITY("	Atividade (nome ou codigo acima): ", "--atividade=.*", null),
-	ONLY_TODAY("	Lançar somente hoje? (S/N) [opcional]: ", "--hoje", new String[] { "s", "sim" }),
+	TODAY_ONLY("	Lançar somente hoje? (s ou sim) [opcional]: ", "--hoje", new String[] { "s", "sim" }),
 	MONTH("	Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*", null),
 	SKIP_DAYS("	Ignorar estes dias (formato: d, d, d[...]) [opcional]: ", "--skipdays=.*", null),
 	CUSTOM_DAYS("	Lancar horas especificas nestes dias (formato: d(h), d(h), d(h)[...])  [opcional]: ",

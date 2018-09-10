@@ -1,4 +1,4 @@
-package org.mfs.gpbot;
+package org.mfs.gpbot.exception;
 
 public class GPBotException extends RuntimeException {
 

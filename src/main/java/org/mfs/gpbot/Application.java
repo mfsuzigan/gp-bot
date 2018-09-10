@@ -6,6 +6,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.log4j.Logger;
+import org.mfs.gpbot.core.Data;
+import org.mfs.gpbot.core.Engine;
+import org.mfs.gpbot.core.Setup;
+import org.mfs.gpbot.exception.GPBotException;
 
 /**
  * Classe de inicializacao do bot
@@ -33,8 +37,8 @@ public class Application {
 
 	public static String getPath() {
 		try {
-			Path path = Paths.get(
-					new URI(Application.class.getProtectionDomain().getCodeSource().getLocation().toString()));
+			Path path = Paths
+					.get(new URI(Application.class.getProtectionDomain().getCodeSource().getLocation().toString()));
 
 			if (path.toFile().isFile() && path.getParent().toFile().isDirectory()) {
 				return path.getParent().toString();

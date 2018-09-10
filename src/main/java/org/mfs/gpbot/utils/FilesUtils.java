@@ -1,19 +1,21 @@
-package org.mfs.gpbot;
+package org.mfs.gpbot.utils;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.mfs.gpbot.exception.GPBotException;
+
 /**
- * Classe de operacoes utilitarias
+ * Classe de operacoes utilitarias para arquivos
  *
  * @author michelsuzigan
  *
  */
-public class Utils {
+public class FilesUtils {
 
-	private Utils() {
+	private FilesUtils() {
 
 	}
 

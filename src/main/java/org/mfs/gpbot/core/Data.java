@@ -1,4 +1,4 @@
-package org.mfs.gpbot;
+package org.mfs.gpbot.core;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -131,7 +131,7 @@ public class Data {
 		case MONTH:
 			parameterSetValue = getMonth();
 			break;
-		case ONLY_TODAY:
+		case TODAY_ONLY:
 			parameterSetValue = isTodayOnly();
 			break;
 		default:
@@ -170,7 +170,7 @@ public class Data {
 		case MONTH:
 			setMonth(parameterValue);
 			break;
-		case ONLY_TODAY:
+		case TODAY_ONLY:
 			setTodayOnly(parameterValue);
 			break;
 		default:
