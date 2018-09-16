@@ -2,8 +2,10 @@ package org.mfs.gpbot.core;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,51 +27,56 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  *
  */
 public class Engine {
-	private static final String DEFAULT_WORK_HOURS_AMOUNT = "8";
-	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
+	private static final LocalTime DEFAULT_WORK_DAY_DURATION = LocalTime.of(8, 0);
+	private static final String CUSTOM_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+(\\:|\\.)\\d{1,2})\\)";
+	private static final String CUSTOM_DAY_PATTERN_COLON = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\:\\d{1,2})\\)";
+	private static final String CUSTOM_DAY_PATTERN_FRACTION = "(1[0-9]|2[0-9]|3[0-1]|[1-9])\\((\\d+|\\d+\\.\\d{1,2})\\)";
 	private static final String SKIP_DAY_PATTERN = "(1[0-9]|2[0-9]|3[0-1]|[1-9])";
 	private static final String WEEKEND_DAYS_MESSAGE = "Os seguintes dias correspondem a fins de semana e nao serao lancados:";
 	private static final String HOLIDAYS_MESSAGE = "Os seguintes dias correspondem a feriados configurados e nao serao lancados:";
 	private static final SimpleDateFormat GP_DATE_FORMAT = new SimpleDateFormat("ddMMyyyy");
 	private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
 	private static final Logger LOGGER = Logger.getLogger(Engine.class);
-
-	enum ElementFilterType {
-		ID, NAME
-	}
+	private static RemoteWebDriver driver;
 
 	public static void execute(Data data) {
-		Map<String, String> daysWithHours = getWorkingDaysWithHours(data);
+		Map<String, LocalTime> daysWithHours = getWorkingDaysWithHours(data);
 		processDays(daysWithHours, data.getCustomDays(), CUSTOM_DAY_PATTERN);
 		processDays(daysWithHours, data.getSkipDays(), SKIP_DAY_PATTERN);
 
 		int successfullySubmittedDaysCount = 0;
-		double successfullySubmittedHoursCount = 0.0d;
+		int submittedHoursCount = 0;
+		int submittedMinutesCount = 0;
 
 		if (!daysWithHours.isEmpty()) {
-			RemoteWebDriver driver = ChromeDriverLoader.getDriver();
-			logonTQI(driver, data);
+			driver = ChromeDriverLoader.getDriver();
+			loginTQI(data);
 
-			for (Entry<String, String> dayWithHours : daysWithHours.entrySet()) {
-				if (submitDay(driver, data, dayWithHours)) {
+			for (Entry<String, LocalTime> dayWithHours : daysWithHours.entrySet()) {
+				if (submitDay(data, dayWithHours)) {
 					successfullySubmittedDaysCount++;
-					successfullySubmittedHoursCount += Double.valueOf(dayWithHours.getValue());
+					submittedHoursCount += dayWithHours.getValue().getHour();
+					submittedMinutesCount += dayWithHours.getValue().getMinute();
 				}
 			}
+
+			submittedHoursCount += submittedMinutesCount / 60;
+			submittedMinutesCount = submittedMinutesCount % 60;
 
 			driver.close();
 		}
 
 		LOGGER.info("RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de " + daysWithHours.size()
-				+ " dias, totalizando " + successfullySubmittedHoursCount + " horas");
+				+ " dias, totalizando " + String.format("%02d", submittedHoursCount) + ":"
+				+ String.format("%02d", submittedMinutesCount) + " horas");
 	}
 
-	private static Map<String, String> getWorkingDaysWithHours(Data data) {
+	private static Map<String, LocalTime> getWorkingDaysWithHours(Data data) {
 		Calendar finalDay = getFinalDay(data);
 		Calendar firstDay = Boolean.TRUE.equals(data.isTodayOnly()) ? (Calendar) finalDay.clone()
 				: getFirstDay(finalDay);
 
-		Map<String, String> workingDays = new TreeMap<>();
+		Map<String, LocalTime> workingDays = new TreeMap<>();
 		List<String> fixedHolidays = getFixedHolidays(finalDay);
 
 		List<String> formattedWeekendDays = new ArrayList<>();
@@ -85,7 +92,7 @@ public class Engine {
 				formattedHolidays.add(DEFAULT_DATE_FORMAT.format(dayInMonth.getTime()));
 
 			} else {
-				workingDays.put(GP_DATE_FORMAT.format(dayInMonth.getTime()), DEFAULT_WORK_HOURS_AMOUNT);
+				workingDays.put(GP_DATE_FORMAT.format(dayInMonth.getTime()), DEFAULT_WORK_DAY_DURATION);
 			}
 		}
 
@@ -158,19 +165,19 @@ public class Engine {
 		return fixedHolidays;
 	}
 
-	private static Map<String, String> processDays(Map<String, String> workingDaysWithHours, List<String> daysList,
-			String dayPattern) {
+	private static Map<String, LocalTime> processDays(Map<String, LocalTime> daysWithWorkingHours,
+			List<String> daysList, String dayPattern) {
 
 		if (daysList != null) {
 			for (String day : daysList) {
-				processDay(workingDaysWithHours, day.trim(), dayPattern);
+				processDay(daysWithWorkingHours, day.trim(), dayPattern);
 			}
 		}
 
-		return workingDaysWithHours;
+		return daysWithWorkingHours;
 	}
 
-	private static Map<String, String> processDay(Map<String, String> workingDaysWithHours, String dayToProcess,
+	private static Map<String, LocalTime> processDay(Map<String, LocalTime> daysWithHours, String dayToProcess,
 			String pattern) {
 
 		if (SKIP_DAY_PATTERN.equals(pattern) && dayToProcess.matches(SKIP_DAY_PATTERN)) {
@@ -178,37 +185,55 @@ public class Engine {
 			calendar.set(Calendar.DAY_OF_MONTH, Integer.valueOf(dayToProcess));
 			String formattedDay = GP_DATE_FORMAT.format(calendar.getTime());
 
-			workingDaysWithHours.remove(formattedDay);
+			daysWithHours.remove(formattedDay);
 
 		} else if (CUSTOM_DAY_PATTERN.equals(pattern) && dayToProcess.matches(CUSTOM_DAY_PATTERN)) {
-			String day = dayToProcess.split("\\(")[0];
-			String hours = (dayToProcess.split("\\(")[1]).split("\\)")[0];
-
-			Calendar calendar = Calendar.getInstance();
-			calendar.set(Calendar.DAY_OF_MONTH, Integer.valueOf(day));
-			String formattedDay = GP_DATE_FORMAT.format(calendar.getTime());
-
-			workingDaysWithHours.put(formattedDay, hours);
+			processCustomDay(daysWithHours, dayToProcess);
 
 		} else {
 			LOGGER.warn("Argumento invalido: " + dayToProcess);
 		}
 
-		return workingDaysWithHours;
+		return daysWithHours;
 	}
 
-	private static boolean submitDay(RemoteWebDriver driver, Data data, Map.Entry<String, String> dayWithHours) {
+	private static void processCustomDay(Map<String, LocalTime> daysWithHours, String dayToProcess) {
+		String day = dayToProcess.split("\\(")[0];
+		String rawDayHours = (dayToProcess.split("\\(")[1]).split("\\)")[0];
+		int workingHours = 0;
+		int workingMinutes = 0;
+
+		if (dayToProcess.matches(CUSTOM_DAY_PATTERN_COLON)) {
+			String[] rawDayHoursParts = rawDayHours.split(":");
+			workingHours = Integer.parseInt(rawDayHoursParts[0]);
+			workingMinutes = Integer.parseInt(rawDayHoursParts[1]);
+
+		} else if (dayToProcess.matches(CUSTOM_DAY_PATTERN_FRACTION)) {
+			Double dayHours = Double.valueOf(rawDayHours);
+			workingHours = dayHours.intValue();
+			workingMinutes = (int) ((dayHours - Double.valueOf(workingHours)) * 60d);
+		}
+
+		Calendar calendar = Calendar.getInstance();
+		calendar.set(Calendar.DAY_OF_MONTH, Integer.valueOf(day));
+		String formattedDay = GP_DATE_FORMAT.format(calendar.getTime());
+
+		daysWithHours.put(formattedDay, LocalTime.of(workingHours, workingMinutes));
+	}
+
+	private static void clearAndFillElement(String elementName, String value) {
+		WebElement element = driver.findElement(By.name(elementName));
+		element.clear();
+		element.sendKeys(value);
+	}
+
+	private static boolean submitDay(Data data, Entry<String, LocalTime> dayWithHours) {
 		driver.navigate().to("https://helpdesk.tqi.com.br/tqiextranet/helpdesk/atividades.asp?TelaOrigem=menu");
 		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
 
-		findElementAndSendKeys(driver, ElementFilterType.NAME, "CmbAtividade", data.getActivityName());
-		findElementAndSendKeys(driver, ElementFilterType.NAME, "DesAplicativo", data.getApplicationName());
-		findElementAndSendKeys(driver, ElementFilterType.NAME, "horas_trab", dayWithHours.getValue());
+		driver.findElement(By.name("CmbAtividade")).sendKeys(data.getActivityName());
 
-		WebElement date = driver.findElement(By.name("DtaAtividade"));
-		date.click();
-		date.clear();
-		date.sendKeys(dayWithHours.getKey());
+		fillTextElements(data, dayWithHours);
 
 		WebElement recordButton = driver.findElement(By.name("BtGravar"));
 		recordButton.click();
@@ -217,17 +242,26 @@ public class Engine {
 
 		LOGGER.info("Lançando " + dayWithHours.getValue() + " horas no dia "
 				+ formatDateForLogging(dayWithHours.getKey()) + ":");
-		boolean daySuccessfullySubmitted = false;
+		boolean dayWasSuccessfullySubmitted = false;
 
 		if (!defaultLogoTableHeight.equals(resultLogoTableHeight)) {
 			String message = driver.findElementByXPath("//table/tbody/tr/td[2]/p/font").getText();
 			LOGGER.info("	erro! Mensagem: \"" + message + "\"");
 		} else {
-			daySuccessfullySubmitted = true;
+			dayWasSuccessfullySubmitted = true;
 			LOGGER.info("	sucesso!");
 		}
 
-		return daySuccessfullySubmitted;
+		return dayWasSuccessfullySubmitted;
+	}
+
+	private static void fillTextElements(Data data, Entry<String, LocalTime> dayWithHours) {
+		Map<String, String> textElementsWithValues = new HashMap<>();
+		textElementsWithValues.put("DesAplicativo", data.getApplicationName());
+		textElementsWithValues.put("DtaAtividade", dayWithHours.getKey());
+		textElementsWithValues.put("horas_trab", Integer.toString(dayWithHours.getValue().getHour()));
+		textElementsWithValues.put("mim_trab", Integer.toString(dayWithHours.getValue().getMinute()));
+		textElementsWithValues.forEach((elementName, value) -> clearAndFillElement(elementName, value));
 	}
 
 	private static String formatDateForLogging(String day) {
@@ -235,31 +269,29 @@ public class Engine {
 			return DEFAULT_DATE_FORMAT.format(GP_DATE_FORMAT.parse(day));
 
 		} catch (ParseException e) {
-			LOGGER.error("Error formatting date", e);
+			LOGGER.error("Erro ao formatar data", e);
 			throw new IllegalStateException(e);
 		}
 	}
 
-	private static void logonTQI(RemoteWebDriver driver, Data data) {
+	private static void loginTQI(Data data) {
+		LOGGER.info("Efetuando login na intranet TQI...");
+
 		driver.get("https://helpdesk.tqi.com.br/sso/login.action");
 
-		findElementAndSendKeys(driver, ElementFilterType.ID, "userName", data.getUsername());
-		findElementAndSendKeys(driver, ElementFilterType.ID, "userPass", data.getPassword());
+		WebElement username = driver.findElement(By.id("userName"));
+		username.clear();
+		username.sendKeys(data.getUsername());
+
+		WebElement password = driver.findElement(By.id("userPass"));
+		password.clear();
+		password.sendKeys(data.getPassword());
 
 		WebElement okButton = driver.findElement(By.id("submitLogin"));
 		okButton.click();
 
 		driver.findElement(By.name("conteúdo"));
-	}
 
-	private static void findElementAndSendKeys(RemoteWebDriver driver, ElementFilterType elementFilterType,
-			String elementFilter, String keys) {
-
-		if (elementFilterType == ElementFilterType.ID) {
-			driver.findElement(By.id(elementFilter)).sendKeys(keys);
-
-		} else if (elementFilterType == ElementFilterType.NAME) {
-			driver.findElement(By.name(elementFilter)).sendKeys(keys);
-		}
+		LOGGER.info("Login na intranet TQI efetuado com sucesso!");
 	}
 }

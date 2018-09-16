@@ -3,7 +3,6 @@ package org.mfs.gpbot.core;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
@@ -25,7 +24,6 @@ public class Data {
 	private Boolean todayOnly;
 	private List<String> skipDays;
 	private List<String> customDays;
-	private Map<String, String> daysWithWorkingHours;
 
 	public String getUsername() {
 		return username;
@@ -41,14 +39,6 @@ public class Data {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	public Map<String, String> getDaysWithWorkingHours() {
-		return daysWithWorkingHours;
-	}
-
-	public void setDaysWithWorkingHours(Map<String, String> daysWithWorkingHours) {
-		this.daysWithWorkingHours = daysWithWorkingHours;
 	}
 
 	public String getApplicationName() {

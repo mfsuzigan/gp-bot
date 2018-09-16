@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.mfs.gpbot.Application;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 public class ChromeDriverLoader {
 
@@ -43,7 +44,9 @@ public class ChromeDriverLoader {
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
 			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
 
-			driver = new ChromeDriver();
+			ChromeOptions options = new ChromeOptions();
+
+			driver = new ChromeDriver(options);
 
 		} else {
 			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");

@@ -9,13 +9,13 @@ import org.apache.commons.lang3.StringUtils;
  *
  */
 public enum InputParameterEnum {
-	USERNAME("	Usuarios: ", "--usuario=.*", null), PASSWORD("	Senha: ", "--senha=.*", null),
+	USERNAME("	Usuario: ", "--usuario=.*", null), PASSWORD("	Senha: ", "--senha=.*", null),
 	APPLICATION("	Nome do aplicativo: ", "--aplicativo=.*", null),
 	ACTIVITY("	Atividade (nome ou codigo acima): ", "--atividade=.*", null),
 	TODAY_ONLY("	Lançar somente hoje? (s ou sim) [opcional]: ", "--hoje", new String[] { "s", "sim" }),
 	MONTH("	Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*", null),
 	SKIP_DAYS("	Nao lancar estes dias (formato: d, d, d, ...) [opcional]: ", "--skipdays=.*", null),
-	CUSTOM_DAYS("	Lancar horas customizadas nestes dias (formato: d(h), d(h), d(h), ...)  [opcional]: ",
+	CUSTOM_DAYS("	Lancar horas customizadas nestes dias (formato: d(hh:mm), d(hh:mm), d(hh:mm), ...)  [opcional]: ",
 			"--customdays=.*", null);
 
 	private String inputMessage;
