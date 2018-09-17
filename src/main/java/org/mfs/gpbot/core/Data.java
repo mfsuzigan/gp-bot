@@ -24,6 +24,7 @@ public class Data {
 	private Boolean todayOnly;
 	private List<String> skipDays;
 	private List<String> customDays;
+	private Boolean shouldRunGUI = false;
 
 	public String getUsername() {
 		return username;
@@ -89,6 +90,14 @@ public class Data {
 		todayOnly = !(StringUtils.isBlank(onlyToday) || "N".equals(onlyToday));
 	}
 
+	public boolean shouldRunGUI() {
+		return shouldRunGUI;
+	}
+
+	private void setShouldRunGUI(String parameterValue) {
+		shouldRunGUI = !(StringUtils.isBlank(parameterValue) || "N".equals(parameterValue));
+	}
+
 	public boolean hasEssentialInformation() {
 		return StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)
 				&& StringUtils.isNotBlank(activityName) && StringUtils.isNotBlank(applicationName);
@@ -123,6 +132,9 @@ public class Data {
 			break;
 		case TODAY_ONLY:
 			parameterSetValue = isTodayOnly();
+			break;
+		case VISIBLE:
+			parameterSetValue = shouldRunGUI();
 			break;
 		default:
 			break;
@@ -163,9 +175,11 @@ public class Data {
 		case TODAY_ONLY:
 			setTodayOnly(parameterValue);
 			break;
+		case VISIBLE:
+			setShouldRunGUI(parameterValue);
+			break;
 		default:
 			break;
 		}
 	}
-
 }

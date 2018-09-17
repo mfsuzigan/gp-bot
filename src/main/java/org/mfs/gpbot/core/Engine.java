@@ -49,7 +49,7 @@ public class Engine {
 		int submittedMinutesCount = 0;
 
 		if (!daysWithHours.isEmpty()) {
-			driver = ChromeDriverLoader.getDriver();
+			driver = ChromeDriverLoader.getDriver(data.shouldRunGUI());
 			loginTQI(data);
 
 			for (Entry<String, LocalTime> dayWithHours : daysWithHours.entrySet()) {
@@ -140,7 +140,6 @@ public class Engine {
 
 	private static List<String> getFixedHolidays(Calendar today) {
 		String holidaysFilePath = Application.getPath() + "/ext/fixed_holidays.dat";
-		LOGGER.info("Lendo arquivo de feriados: " + holidaysFilePath);
 		List<String> fixedHolidaysWithYearAsPlaceHolder = FilesUtils.readAllLinesFromFile(holidaysFilePath);
 
 		String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
@@ -161,6 +160,8 @@ public class Engine {
 				fixedHolidays.add(fixedHoliday + previousYear);
 			}
 		}
+
+		LOGGER.info("Arquivo de feriados carregado com sucesso");
 
 		return fixedHolidays;
 	}
@@ -292,6 +293,6 @@ public class Engine {
 
 		driver.findElement(By.name("conteúdo"));
 
-		LOGGER.info("Login na intranet TQI efetuado com sucesso!");
+		LOGGER.info("Login na intranet TQI efetuado com sucesso");
 	}
 }

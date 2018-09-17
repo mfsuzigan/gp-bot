@@ -16,7 +16,8 @@ public enum InputParameterEnum {
 	MONTH("	Mes (1, 2, ..., 12) [opcional]: ", "--mes=.*", null),
 	SKIP_DAYS("	Nao lancar estes dias (formato: d, d, d, ...) [opcional]: ", "--skipdays=.*", null),
 	CUSTOM_DAYS("	Lancar horas customizadas nestes dias (formato: d(hh:mm), d(hh:mm), d(hh:mm), ...)  [opcional]: ",
-			"--customdays=.*", null);
+			"--customdays=.*", null),
+	VISIBLE(null, "--visivel", new String[] { "s", "sim" });
 
 	private String inputMessage;
 	private String commandLinePattern;

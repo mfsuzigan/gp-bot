@@ -26,7 +26,7 @@ public class ChromeDriverLoader {
 
 	private static final String CHROME_VERSION_COMMAND_OUTPUT_PATTERN = "Google Chrome \\d{2}.*";
 
-	public static ChromeDriver getDriver() {
+	public static ChromeDriver getDriver(boolean shouldRunGUI) {
 		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
 
 		String chromeDrivePath = Application.getPath() + "/lib/chromedriver/{0}/chromedriver";
@@ -44,9 +44,14 @@ public class ChromeDriverLoader {
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
 			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
 
-			ChromeOptions options = new ChromeOptions();
-
-			driver = new ChromeDriver(options);
+			if (shouldRunGUI) {
+				driver = new ChromeDriver();
+			} else {
+				ChromeOptions chromeOptions = new ChromeOptions();
+				chromeOptions.addArguments("headless");
+				chromeOptions.setCapability("acceptInsecureCerts", true);
+				driver = new ChromeDriver(chromeOptions);
+			}
 
 		} else {
 			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");

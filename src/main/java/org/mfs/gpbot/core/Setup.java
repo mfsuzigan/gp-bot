@@ -73,6 +73,11 @@ public class Setup {
 							|| InputParameterEnum.TODAY_ONLY.matchesAnyExpectedValues(parameterValue)) ? "S" : "N";
 				}
 
+				if (InputParameterEnum.VISIBLE.equals(inputParameter)) {
+					parameterValue = (StringUtils.isBlank(parameterValue)
+							|| InputParameterEnum.VISIBLE.matchesAnyExpectedValues(parameterValue)) ? "S" : "N";
+				}
+
 				if (InputParameterEnum.ACTIVITY.equals(inputParameter)) {
 					parameterValue = normalizeActivityInput(parameterValue);
 				}
@@ -178,7 +183,9 @@ public class Setup {
 						|| InputParameterEnum.CUSTOM_DAYS.equals(inputParameter)
 						|| InputParameterEnum.SKIP_DAYS.equals(inputParameter));
 
-		return !parameterIsNowUseless;
+		boolean parameterMustBeHidden = inputParameter.getInputMessage() == null;
+
+		return !parameterIsNowUseless && !parameterMustBeHidden;
 	}
 
 }

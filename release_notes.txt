@@ -1,0 +1,47 @@
+1. Melhorias na engine
+
+1.1 Com o uso da configuração "headless" do Chrome, o Bot não utiliza mais, por padrão, a interface gráfica do navegador para efetuar os lançamentos.
+
+Para habilitar o lançamento com o uso da GUI do Chrome, informe o parâmetro --visivel na linha de comando.
+
+1.2 É possível agora lançar somente o dia atual:
+- via console: preencha a opção correspondente com S ou sim;
+- via linha de comando: informe o parâmetro --hoje. 
+
+Exemplo: java -jar gp-bot.jar --usuario=jose.silva --aplicativo=PagSeguro --atividade=Codificação --hoje
+
+1.3 A janela do Chrome é fechada automaticamente ao final do lançamento
+
+1.4 Na opção de lançamento de horas customizadas são agora suportados dois formatos:
+- fracionário: 8(7.5) -> dia 8, sete horas e meia
+- horário: 8(7:30) -> dia 8, sete horas e trinta minutos
+
+Ambos podem ser usados de forma transparente.
+
+2. Melhorias no console de entrada
+
+2.1 É exibida agora a lista completa de atividades do GP para facilitar o preenchimento. É possível informar a atividade tanto pelo nome exato (como antes) quanto pelo código da lista:
+- via console: informe o nome exato da atividade ou o código da lista de atividades;
+- via linha de comando: informe o parâmetro --atividade com o nome exato ou o código da lista de atividades.
+
+Exemplos: 
+java -jar gp-bot.jar --atividade=Codificação ou
+java -jar gp-bot.jar --atividade=1 para lançar a atividade de Codificação
+
+2.2 O console não exige mais o preenchimento de parâmetros já informados via linha de comando, somente os obrigatórios não preenchidos.
+Exemplo: java -jar gp-bot.jar --usuario=jose.silva --aplicativo=PagSeguro --atividade=1 fará o console pedir somente o preenchimento de senha e as opções de 
+
+3. Melhorias no log
+
+O log está mais informativo.
+
+3.1 Exibe agora os feriados e dias de fim de semana detectados no intervalo de lançamento em questão
+
+3.2 Exibe mensagem no início do login na intranet TQI.
+
+3.3 Exibe também as mensagens de erro devolvidas pelo GP durante o preenchimento.
+
+
+- aplicativo opcional para teste de sistema
+- carregamento de chromedriver custom
+
