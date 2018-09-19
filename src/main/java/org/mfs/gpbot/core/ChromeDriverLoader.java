@@ -1,23 +1,26 @@
 package org.mfs.gpbot.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.mfs.gpbot.Application;
+import org.mfs.gpbot.exception.GPBotException;
+import org.mfs.gpbot.utils.FilesUtils;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
 public class ChromeDriverLoader {
 
+	private static final String SHIPPED_CHROMEDRIVERS_PATH = "/lib/chromedriver/{0}/chromedriver";
+	private static final String CUSTOM_CHROMEDRIVER_PATH = "/chromedriver/chromedriver";
 	private static final Logger LOGGER = Logger.getLogger(ChromeDriverLoader.class);
 
 	private ChromeDriverLoader() {
@@ -26,55 +29,114 @@ public class ChromeDriverLoader {
 
 	private static final String CHROME_VERSION_COMMAND_OUTPUT_PATTERN = "Google Chrome \\d{2}.*";
 
-	public static ChromeDriver getDriver(boolean shouldRunGUI) {
-		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
+	private static ChromeDriver loadCustomChromeDriver(boolean shouldRunGUI) {
 
-		String chromeDrivePath = Application.getPath() + "/lib/chromedriver/{0}/chromedriver";
-		String chromeVersion = getChromeVersion();
 		ChromeDriver driver = null;
+		String chromeDriverPath = Application.getPath() + CUSTOM_CHROMEDRIVER_PATH;
+
+		if (new File(chromeDriverPath).isFile()) {
+			LOGGER.info("Informada versao customizada do ChromeDriver. Carregando...");
+			driver = loadDriver(chromeDriverPath, shouldRunGUI);
+			LOGGER.info("Versao customizada do ChromeDriver carregada com sucesso");
+		}
+
+		return driver;
+	}
+
+	private static ChromeDriver loadChromeDriverFromShippedVersions(boolean shouldRunGUI) {
+
+		ChromeDriver driver = null;
+		String chromeVersion = getChromeVersion();
 
 		if (StringUtils.isNotBlank(chromeVersion)) {
+			LOGGER.info("Identificada versao " + chromeVersion
+					+ " do Chrome. Carregando ChromeDriver dentre as versoes distribuidas com o GP Bot...");
+
+			Properties chromeDriverVersionsByChrome = FilesUtils
+					.loadProperties(Application.getPath() + "/ext/chrome_driver_version_mappings.dat");
 
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
-				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
+				LOGGER.warn("Nao foi possivel identificar uma versao do ChromeDriver compativel");
+
 			} else {
-				LOGGER.info("Identificada versao " + chromeVersion + " do Chrome");
+				String chromeDriverPath = Application.getPath() + MessageFormat.format(SHIPPED_CHROMEDRIVERS_PATH,
+						chromeDriverVersionsByChrome.get(chromeVersion));
+				driver = loadDriver(chromeDriverPath, shouldRunGUI);
 			}
+		}
 
-			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
-			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
+		return driver;
+	}
 
-			if (shouldRunGUI) {
-				driver = new ChromeDriver();
-			} else {
-				ChromeOptions chromeOptions = new ChromeOptions();
-				chromeOptions.addArguments("headless");
-				chromeOptions.setCapability("acceptInsecureCerts", true);
-				driver = new ChromeDriver(chromeOptions);
+	private static ChromeDriver loadChromeDriverFromVersionsPrioritized(boolean shouldRunGUI) {
+
+		ChromeDriver driver = null;
+		LOGGER.info("Tentando carregamento do ChromeDriver pela priorizacao de versoes disponiveis...");
+		String applicationPath = Application.getPath();
+
+		for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
+			String chromeDriverPath = applicationPath
+					+ MessageFormat.format(SHIPPED_CHROMEDRIVERS_PATH, chromeDriverVersion);
+
+			try {
+				LOGGER.info("	versao " + chromeDriverVersion + " do ChromeDriver...");
+				driver = loadDriver(chromeDriverPath, shouldRunGUI);
+				break;
+
+			} catch (Exception e) {
+				LOGGER.warn("	falha");
 			}
+		}
 
-		} else {
-			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");
+		return driver;
+	}
 
-			for (String chromeDriverVersion : getChromeDriverVersionsByPriority()) {
-				chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersion);
+	public static ChromeDriver getDriver(boolean shouldRunGUI) {
 
-				try {
-					System.setProperty("webdriver.chrome.driver", chromeDrivePath);
-					driver = new ChromeDriver();
-					break;
+		ChromeDriver driver = null;
+		driver = loadCustomChromeDriver(shouldRunGUI);
 
-				} catch (Exception e) {
-					// driver nao encontrado ainda
-				}
-			}
+		if (driver == null) {
+			driver = loadChromeDriverFromShippedVersions(shouldRunGUI);
+		}
+
+		if (driver == null) {
+			driver = loadChromeDriverFromVersionsPrioritized(shouldRunGUI);
 		}
 
 		if (driver == null) {
 			throw new UnsupportedOperationException("Nenhuma versao do ChromeDriver disponivel pode ser aplicada");
 		}
 
+		LOGGER.info("ChromeDriver carregado com sucesso");
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
+
+		return driver;
+
+	}
+
+	private static ChromeDriver loadDriver(String chromeDriverPath, boolean shouldRunGUI) {
+
+		System.setProperty("webdriver.chrome.driver", chromeDriverPath);
+		ChromeDriver driver;
+
+		try {
+
+			if (shouldRunGUI) {
+				driver = new ChromeDriver();
+
+			} else {
+				ChromeOptions chromeOptions = new ChromeOptions();
+				chromeOptions.addArguments("headless");
+				chromeOptions.setCapability("acceptInsecureCerts", true);
+				driver = new ChromeDriver(chromeOptions);
+			}
+		} catch (Exception e) {
+			String errorMessage = "Erro ao carregar ChromeDriver (" + chromeDriverPath + ")";
+			LOGGER.error(errorMessage);
+			throw new GPBotException(errorMessage, e);
+		}
+
 		return driver;
 	}
 
@@ -97,19 +159,7 @@ public class ChromeDriverLoader {
 		return chromeVersion;
 	}
 
-	private static Map<String, String> getChromeDriverVersionsByChrome() {
-		Map<String, String> chromeDriverVersionsByChrome = new HashMap<>();
-		chromeDriverVersionsByChrome.put("61", "2.34");
-		chromeDriverVersionsByChrome.put("62", "2.34");
-		chromeDriverVersionsByChrome.put("63", "2.34");
-		chromeDriverVersionsByChrome.put("64", "2.37");
-		chromeDriverVersionsByChrome.put("65", "2.37");
-		chromeDriverVersionsByChrome.put("66", "2.37");
-		chromeDriverVersionsByChrome.put("67", "2.38");
-		return chromeDriverVersionsByChrome;
-	}
-
 	private static List<String> getChromeDriverVersionsByPriority() {
-		return Arrays.asList("2.34", "2.37", "2.38");
+		return FilesUtils.readAllLinesFrom(Application.getPath() + "/ext/chrome_driver_version_priorities.dat");
 	}
 }

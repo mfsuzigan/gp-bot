@@ -140,7 +140,7 @@ public class Engine {
 
 	private static List<String> getFixedHolidays(Calendar today) {
 		String holidaysFilePath = Application.getPath() + "/ext/fixed_holidays.dat";
-		List<String> fixedHolidaysWithYearAsPlaceHolder = FilesUtils.readAllLinesFromFile(holidaysFilePath);
+		List<String> fixedHolidaysWithYearAsPlaceHolder = FilesUtils.readAllLinesFrom(holidaysFilePath);
 
 		String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
 				+ String.format("%02d", today.get(Calendar.DAY_OF_MONTH));

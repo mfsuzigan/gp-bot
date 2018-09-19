@@ -1,10 +1,8 @@
 package org.mfs.gpbot.core;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -12,10 +10,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.mfs.gpbot.Application;
 import org.mfs.gpbot.enumeration.InputParameterEnum;
-import org.mfs.gpbot.exception.GPBotException;
 import org.mfs.gpbot.utils.FilesUtils;
-
-import com.google.common.io.Files;
 
 /**
  * Captura dados das entradas, identifica a versao do Chrome e do ChromeVersion
@@ -132,15 +127,7 @@ public class Setup {
 	private static String normalizeActivityInput(String activityInput) {
 
 		if (StringUtils.isNotBlank(activityInput)) {
-			Properties activitiesByCode = new Properties();
-
-			try {
-				activitiesByCode.load(Files.newReader(new File(Application.getPath() + "/ext/activities.dat"),
-						Charset.defaultCharset()));
-
-			} catch (IOException e) {
-				throw new GPBotException("Erro ao ler arquivo de atividades", e);
-			}
+			Properties activitiesByCode = FilesUtils.loadProperties(Application.getPath() + "/ext/activities.dat");
 
 			if (!activitiesByCode.values().contains(activityInput)) {
 				activityInput = activitiesByCode.getProperty(activityInput);
@@ -153,7 +140,7 @@ public class Setup {
 	private static void showActivitiesList(InputParameterEnum inputParameter) {
 
 		if (InputParameterEnum.ACTIVITY.equals(inputParameter)) {
-			List<String> activities = FilesUtils.readAllLinesFromFile(Application.getPath() + "/ext/activities.dat");
+			List<String> activities = FilesUtils.readAllLinesFrom(Application.getPath() + "/ext/activities.dat");
 			System.out.println("	Lista de atividades:");
 			activities.forEach(activity -> System.out.println("		" + activity));
 		}

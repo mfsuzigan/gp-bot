@@ -29,5 +29,12 @@
 			</includes>
 			<outputDirectory>/lib</outputDirectory>
 		</fileSet>
+		<fileSet>
+			<directory>chromedriver</directory>
+			<excludes>
+				<exclude>*/**</exclude>
+			</excludes>
+			<outputDirectory>/chromedriver</outputDirectory>
+		</fileSet>
 	</fileSets>
 </assembly>
