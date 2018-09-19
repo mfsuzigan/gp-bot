@@ -1,6 +1,7 @@
 package org.mfs.gpbot.core;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
@@ -18,6 +19,8 @@ import org.openqa.selenium.chrome.ChromeOptions;
 
 public class ChromeDriverLoader {
 
+	private static final String SHIPPED_CHROMEDRIVERS_PATH = "/lib/chromedriver/{0}/chromedriver";
+	private static final String CUSTOM_CHROMEDRIVER_PATH = "/chromedriver/chromedriver";
 	private static final Logger LOGGER = Logger.getLogger(ChromeDriverLoader.class);
 
 	private ChromeDriverLoader() {
@@ -27,13 +30,20 @@ public class ChromeDriverLoader {
 	private static final String CHROME_VERSION_COMMAND_OUTPUT_PATTERN = "Google Chrome \\d{2}.*";
 
 	public static ChromeDriver getDriver(boolean shouldRunGUI) {
-		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
 
-		String chromeDrivePath = Application.getPath() + "/lib/chromedriver/{0}/chromedriver";
-		String chromeVersion = getChromeVersion();
+		Map<String, String> chromeDriverVersionsByChrome = getChromeDriverVersionsByChrome();
+		String chromeDrivePath = Application.getPath() + CUSTOM_CHROMEDRIVER_PATH;
 		ChromeDriver driver = null;
 
-		if (StringUtils.isNotBlank(chromeVersion)) {
+		if (new File(chromeDrivePath).isFile()) {
+			driver = loadDriver(shouldRunGUI);
+		}
+
+		String chromeDrivePath = Application.getPath() + SHIPPED_CHROMEDRIVERS_PATH;
+
+		String chromeVersion = getChromeVersion();
+
+		if (driver == null && StringUtils.isNotBlank(chromeVersion)) {
 
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				throw new UnsupportedOperationException("Versao do Chrome nao suportada");
@@ -44,14 +54,7 @@ public class ChromeDriverLoader {
 			chromeDrivePath = MessageFormat.format(chromeDrivePath, chromeDriverVersionsByChrome.get(chromeVersion));
 			System.setProperty("webdriver.chrome.driver", chromeDrivePath);
 
-			if (shouldRunGUI) {
-				driver = new ChromeDriver();
-			} else {
-				ChromeOptions chromeOptions = new ChromeOptions();
-				chromeOptions.addArguments("headless");
-				chromeOptions.setCapability("acceptInsecureCerts", true);
-				driver = new ChromeDriver(chromeOptions);
-			}
+			driver = loadDriver(shouldRunGUI);
 
 		} else {
 			LOGGER.info("Versao do Chrome nao identificada, identificando versao do ChromeDriver aplicavel...");
@@ -75,6 +78,19 @@ public class ChromeDriverLoader {
 		}
 
 		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
+		return driver;
+	}
+
+	private static ChromeDriver loadDriver(boolean shouldRunGUI) {
+		ChromeDriver driver;
+		if (shouldRunGUI) {
+			driver = new ChromeDriver();
+		} else {
+			ChromeOptions chromeOptions = new ChromeOptions();
+			chromeOptions.addArguments("headless");
+			chromeOptions.setCapability("acceptInsecureCerts", true);
+			driver = new ChromeDriver(chromeOptions);
+		}
 		return driver;
 	}
 
