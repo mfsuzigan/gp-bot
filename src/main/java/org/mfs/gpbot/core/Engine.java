@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.mfs.gpbot.Application;
+import org.mfs.gpbot.exception.GPBotException;
 import org.mfs.gpbot.utils.FilesUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -47,6 +48,7 @@ public class Engine {
 		int successfullySubmittedDaysCount = 0;
 		int submittedHoursCount = 0;
 		int submittedMinutesCount = 0;
+		boolean thereHaveBeenErrors = false;
 
 		if (!daysWithHours.isEmpty()) {
 			driver = ChromeDriverLoader.getDriver(data.shouldRunGUI());
@@ -57,6 +59,9 @@ public class Engine {
 					successfullySubmittedDaysCount++;
 					submittedHoursCount += dayWithHours.getValue().getHour();
 					submittedMinutesCount += dayWithHours.getValue().getMinute();
+
+				} else {
+					thereHaveBeenErrors = true;
 				}
 			}
 
@@ -66,8 +71,12 @@ public class Engine {
 			driver.close();
 		}
 
-		LOGGER.info("RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de " + daysWithHours.size()
-				+ " dias, totalizando " + String.format("%02d", submittedHoursCount) + ":"
+		if (thereHaveBeenErrors) {
+			LOGGER.info("	ATENCAO: Houve erros no lancamento. Verifique as mensagens acima!");
+		}
+
+		LOGGER.info("	RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de "
+				+ daysWithHours.size() + " dias, totalizando " + String.format("%02d", submittedHoursCount) + ":"
 				+ String.format("%02d", submittedMinutesCount) + " horas");
 	}
 
@@ -139,7 +148,7 @@ public class Engine {
 	}
 
 	private static List<String> getFixedHolidays(Calendar today) {
-		String holidaysFilePath = Application.getPath() + "/ext/fixed_holidays.dat";
+		String holidaysFilePath = Application.getPath() + "/config/fixed_holidays.dat";
 		List<String> fixedHolidaysWithYearAsPlaceHolder = FilesUtils.readAllLinesFrom(holidaysFilePath);
 
 		String currentDayAndMonth = String.format("%02d", today.get(Calendar.MONTH) + 1)
@@ -152,13 +161,8 @@ public class Engine {
 
 		for (String fixedHoliday : fixedHolidaysWithYearAsPlaceHolder) {
 			String normalizedFixedHoliday = fixedHoliday.substring(2, 4) + fixedHoliday.substring(0, 2);
-
-			if (currentDayAndMonth.compareTo(normalizedFixedHoliday) >= 0) {
-				fixedHolidays.add(fixedHoliday + currentYear);
-
-			} else {
-				fixedHolidays.add(fixedHoliday + previousYear);
-			}
+			String year = currentDayAndMonth.compareTo(normalizedFixedHoliday) >= 0 ? currentYear : previousYear;
+			fixedHolidays.add(fixedHoliday + year);
 		}
 
 		LOGGER.info("Arquivo de feriados carregado com sucesso");
@@ -222,10 +226,13 @@ public class Engine {
 		daysWithHours.put(formattedDay, LocalTime.of(workingHours, workingMinutes));
 	}
 
-	private static void clearAndFillElement(String elementName, String value) {
+	private static void clearAndFillEnabledElement(String elementName, String value) {
 		WebElement element = driver.findElement(By.name(elementName));
-		element.clear();
-		element.sendKeys(value);
+
+		if (!"true".equals(element.getAttribute("disabled"))) {
+			element.clear();
+			element.sendKeys(value);
+		}
 	}
 
 	private static boolean submitDay(Data data, Entry<String, LocalTime> dayWithHours) {
@@ -233,7 +240,6 @@ public class Engine {
 		String defaultLogoTableHeight = driver.findElement(By.xpath("//table")).getCssValue("height");
 
 		driver.findElement(By.name("CmbAtividade")).sendKeys(data.getActivityName());
-
 		fillTextElements(data, dayWithHours);
 
 		WebElement recordButton = driver.findElement(By.name("BtGravar"));
@@ -262,7 +268,7 @@ public class Engine {
 		textElementsWithValues.put("DtaAtividade", dayWithHours.getKey());
 		textElementsWithValues.put("horas_trab", Integer.toString(dayWithHours.getValue().getHour()));
 		textElementsWithValues.put("mim_trab", Integer.toString(dayWithHours.getValue().getMinute()));
-		textElementsWithValues.forEach((elementName, value) -> clearAndFillElement(elementName, value));
+		textElementsWithValues.forEach((elementName, value) -> clearAndFillEnabledElement(elementName, value));
 	}
 
 	private static String formatDateForLogging(String day) {
@@ -270,7 +276,7 @@ public class Engine {
 			return DEFAULT_DATE_FORMAT.format(GP_DATE_FORMAT.parse(day));
 
 		} catch (ParseException e) {
-			LOGGER.error("Erro ao formatar data", e);
+			LOGGER.error("Erro ao formatar data: " + day, e);
 			throw new IllegalStateException(e);
 		}
 	}
@@ -279,20 +285,19 @@ public class Engine {
 		LOGGER.info("Efetuando login na intranet TQI...");
 
 		driver.get("https://helpdesk.tqi.com.br/sso/login.action");
-
-		WebElement username = driver.findElement(By.id("userName"));
-		username.clear();
-		username.sendKeys(data.getUsername());
-
-		WebElement password = driver.findElement(By.id("userPass"));
-		password.clear();
-		password.sendKeys(data.getPassword());
+		clearAndFillEnabledElement("userName", data.getUsername());
+		clearAndFillEnabledElement("userPass", data.getPassword());
 
 		WebElement okButton = driver.findElement(By.id("submitLogin"));
 		okButton.click();
 
-		driver.findElement(By.name("conteúdo"));
+		try {
+			driver.findElement(By.name("conteúdo"));
+			LOGGER.info("Login na intranet TQI efetuado com sucesso");
 
-		LOGGER.info("Login na intranet TQI efetuado com sucesso");
+		} catch (Exception e) {
+			throw new GPBotException("Erro ao efetuar login. Verifique usuario e senha informados e tente novamente",
+					e);
+		}
 	}
 }

@@ -53,7 +53,7 @@ public class ChromeDriverLoader {
 					+ " do Chrome. Carregando ChromeDriver dentre as versoes distribuidas com o GP Bot...");
 
 			Properties chromeDriverVersionsByChrome = FilesUtils
-					.loadProperties(Application.getPath() + "/ext/chrome_driver_version_mappings.dat");
+					.loadProperties(Application.getPath() + "/config/chrome_driver_version_mappings.dat");
 
 			if (!chromeDriverVersionsByChrome.keySet().contains(chromeVersion)) {
 				LOGGER.warn("Nao foi possivel identificar uma versao do ChromeDriver compativel");
@@ -109,7 +109,7 @@ public class ChromeDriverLoader {
 		}
 
 		LOGGER.info("ChromeDriver carregado com sucesso");
-		driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);
+		driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
 
 		return driver;
 
@@ -160,6 +160,6 @@ public class ChromeDriverLoader {
 	}
 
 	private static List<String> getChromeDriverVersionsByPriority() {
-		return FilesUtils.readAllLinesFrom(Application.getPath() + "/ext/chrome_driver_version_priorities.dat");
+		return FilesUtils.readAllLinesFrom(Application.getPath() + "/config/chrome_driver_version_priorities.dat");
 	}
 }

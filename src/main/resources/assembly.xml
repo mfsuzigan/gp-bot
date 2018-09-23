@@ -16,11 +16,11 @@
 			</includes>
 		</fileSet>
 		<fileSet>
-			<directory>ext</directory>
+			<directory>config</directory>
 			<includes>
 				<include>**/*</include>
 			</includes>
-			<outputDirectory>/ext</outputDirectory>
+			<outputDirectory>/config</outputDirectory>
 		</fileSet>
 		<fileSet>
 			<directory>lib</directory>

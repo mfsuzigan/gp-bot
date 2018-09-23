@@ -127,7 +127,7 @@ public class Setup {
 	private static String normalizeActivityInput(String activityInput) {
 
 		if (StringUtils.isNotBlank(activityInput)) {
-			Properties activitiesByCode = FilesUtils.loadProperties(Application.getPath() + "/ext/activities.dat");
+			Properties activitiesByCode = FilesUtils.loadProperties(Application.getPath() + "/config/activities.dat");
 
 			if (!activitiesByCode.values().contains(activityInput)) {
 				activityInput = activitiesByCode.getProperty(activityInput);
@@ -140,7 +140,7 @@ public class Setup {
 	private static void showActivitiesList(InputParameterEnum inputParameter) {
 
 		if (InputParameterEnum.ACTIVITY.equals(inputParameter)) {
-			List<String> activities = FilesUtils.readAllLinesFrom(Application.getPath() + "/ext/activities.dat");
+			List<String> activities = FilesUtils.readAllLinesFrom(Application.getPath() + "/config/activities.dat");
 			System.out.println("	Lista de atividades:");
 			activities.forEach(activity -> System.out.println("		" + activity));
 		}
