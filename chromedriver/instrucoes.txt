@@ -1,0 +1,5 @@
+GP Bot 1.1.0
+
+Cole neste diretório o executavel chromedriver da versao que deseja que o bot execute.
+
+Mais informações: https://github.com/mfsuzigan/gp-bot

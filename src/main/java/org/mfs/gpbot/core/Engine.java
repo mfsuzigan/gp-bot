@@ -72,7 +72,7 @@ public class Engine {
 		}
 
 		if (thereHaveBeenErrors) {
-			LOGGER.info("	ATENCAO: Houve erros no lancamento. Verifique as mensagens acima!");
+			LOGGER.info("Atencao: Houve erros durante lancamento, Verifique as mensagens acima");
 		}
 
 		LOGGER.info("	RESULTADO: lancados com sucesso " + successfullySubmittedDaysCount + " de "
@@ -82,8 +82,9 @@ public class Engine {
 
 	private static Map<String, LocalTime> getWorkingDaysWithHours(Data data) {
 		Calendar finalDay = getFinalDay(data);
-		Calendar firstDay = Boolean.TRUE.equals(data.isTodayOnly()) ? (Calendar) finalDay.clone()
-				: getFirstDay(finalDay);
+		boolean isTodayOnly = Boolean.TRUE.equals(data.isTodayOnly());
+
+		Calendar firstDay = isTodayOnly ? (Calendar) finalDay.clone() : getFirstDay(finalDay);
 
 		Map<String, LocalTime> workingDays = new TreeMap<>();
 		List<String> fixedHolidays = getFixedHolidays(finalDay);
@@ -91,8 +92,8 @@ public class Engine {
 		List<String> formattedWeekendDays = new ArrayList<>();
 		List<String> formattedHolidays = new ArrayList<>();
 
-		for (Calendar dayInMonth = firstDay; dayInMonth.before(finalDay) || dayInMonth.equals(finalDay); dayInMonth
-				.add(Calendar.DAY_OF_MONTH, 1)) {
+		for (Calendar dayInMonth = firstDay; dayInMonth.before(finalDay)
+				|| (isTodayOnly && dayInMonth.equals(finalDay)); dayInMonth.add(Calendar.DAY_OF_MONTH, 1)) {
 
 			if (matchesWeekendDay(dayInMonth)) {
 				formattedWeekendDays.add(DEFAULT_DATE_FORMAT.format(dayInMonth.getTime()));
