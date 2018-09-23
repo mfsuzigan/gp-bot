@@ -1,5 +1,5 @@
 # GP Bot
-###### [1.1.0](docs/release_notes/1.1.0)
+###### [1.1.0](docs/release_notes/1.1.0.md)
 \
 Cansado de **gastar seu tempo** lançando o [TQI-GP](https://helpdesk.tqi.com.br/sso/login.action) **na mão todos os dias**? 
 
