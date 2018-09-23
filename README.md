@@ -26,7 +26,7 @@ Baixe a última versao [aqui](release/gp-bot.zip?raw=true) e descompacte o arqui
 
 Há duas maneiras de informar os dados de lançamento ao bot:
 
-- via **[console](#lancamentoConsole)**, informando manualmente os parâmetros de execução. Use esta opção se quiser preencher com calma, passo a passo.
+- via **[console](#lancamentoConsole)**, informando manualmente os parâmetros de execução. Use esta opção se quiser preencher tudo com calma, passo a passo.
 - via **[linha de comando](#lancamentoLinhaComando)**. Para quem quer mais **rapidez**! Use também esta opção se necessitar de um **comando único** que possa ser configurado numa **ferramenta de agendamento** como o **cron** ou de **automatização de execução** como o **Jenkins**.
 
 Em comum, as duas opções são iniciadas com a execução do arquivo `gp-bot.jar`:
@@ -60,7 +60,7 @@ Pelo console, informe em sequência:
 ## <a name="lancamentoLinhaComando"></a>Lançamento com parâmetros via linha de comando
 Pela linha de comando, complete os parâmetros passados ao executável:
 
-`java -jar gp-bot [parametros]`
+`java -jar gp-bot.jar [parametros]`
 
 com as opções abaixo, em qualquer ordem:
 
