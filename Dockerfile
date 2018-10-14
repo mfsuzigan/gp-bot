@@ -1,7 +1,8 @@
-FROM maven:latest
+FROM selenium/standalone-chrome
 MAINTAINER Michel F. Suzigan
-COPY target/gp-bot*.jar /usr/local/gp-bot/gp-bot.jar
-COPY lib/ /usr/local/gp-bot/lib/
+COPY release/gp-bot/ /usr/local/gp-bot/
 WORKDIR /usr/local/gp-bot
-ENTRYPOINT java -jar gp-bot.jar
-
+USER root
+ENV TZ America/Sao_Paulo
+ENTRYPOINT ["java", "-jar", "gp-bot.jar"]
+CMD [""]
