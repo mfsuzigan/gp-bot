@@ -30,7 +30,7 @@ Se preferir executar o **GP Bot** localmente, baixe a última versão [aqui](rel
 
 ## Executando o GP Bot: o comando base <a name="comandoBase"></a>
 Abra um terminal de sua preferência e digite:
-- no Docker: `docker run -it mfsuzigan/gp-bot`
+- via Docker: `docker run -it mfsuzigan/gp-bot`
 - localmente, no diretório descompactado: `java -jar gp-bot.jar`
 
 Este é o **comando base do GP Bot**. Executando desta forma, será dada a você a opção de **preencher cada um dos parâmetros de execução** para lançamento das horas, mas também é possível informá-los **via linha de comando**.
